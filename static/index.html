@@ -9,138 +9,269 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #0f0f0f;
+      background: #0a0a0a;
       color: #e4e4e7;
-      height: 100vh;
+      height: 100dvh;
       display: flex;
       flex-direction: column;
     }
 
     header {
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid #27272a;
+      padding: 0.875rem 1.25rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.625rem;
+      background: rgba(10,10,10,0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
     header .dot {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: #22c55e;
-      box-shadow: 0 0 6px #22c55e88;
+      box-shadow: 0 0 8px rgba(34,197,94,0.4);
+      flex-shrink: 0;
     }
 
     header h1 {
-      font-size: 1rem;
+      font-size: 0.875rem;
       font-weight: 600;
       color: #fafafa;
+      letter-spacing: -0.01em;
     }
 
-    header span.tag {
-      font-size: 0.7rem;
-      padding: 0.15rem 0.5rem;
+    header .tag {
+      font-size: 0.625rem;
+      padding: 0.125rem 0.5rem;
       border-radius: 9999px;
-      background: #27272a;
-      color: #a1a1aa;
+      background: rgba(255,255,255,0.06);
+      color: #71717a;
       font-weight: 500;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
     }
 
     #chat {
       flex: 1;
       overflow-y: auto;
-      padding: 1.5rem;
+      padding: 1.5rem 1rem;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 0.25rem;
     }
 
+    .msg-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      max-width: min(75%, 560px);
+      animation: fadeUp 0.25s ease-out;
+    }
+
+    .msg-group.user { align-self: flex-end; }
+    .msg-group.assistant { align-self: flex-start; }
+
+    .msg-label {
+      font-size: 0.675rem;
+      font-weight: 500;
+      color: #52525b;
+      padding: 0 0.25rem;
+      margin-bottom: 0.125rem;
+      margin-top: 0.75rem;
+    }
+
+    .msg-group.user .msg-label { text-align: right; }
+
     .msg {
-      max-width: 72%;
-      padding: 0.75rem 1rem;
-      border-radius: 1rem;
-      line-height: 1.5;
-      font-size: 0.9rem;
-      white-space: pre-wrap;
+      padding: 0.625rem 0.875rem;
+      border-radius: 1.125rem;
+      line-height: 1.55;
+      font-size: 0.875rem;
       word-wrap: break-word;
+      overflow-wrap: break-word;
     }
 
     .msg.user {
-      align-self: flex-end;
       background: #2563eb;
       color: #fff;
-      border-bottom-right-radius: 0.25rem;
+      border-bottom-right-radius: 0.375rem;
     }
 
     .msg.assistant {
-      align-self: flex-start;
-      background: #1c1c1e;
-      border: 1px solid #27272a;
-      border-bottom-left-radius: 0.25rem;
+      background: #18181b;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-bottom-left-radius: 0.375rem;
     }
 
     .msg.assistant.thinking {
-      color: #71717a;
-      font-style: italic;
+      color: #52525b;
+    }
+
+    .msg.assistant.thinking::after {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 14px;
+      background: #52525b;
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      animation: blink 0.8s step-end infinite;
+    }
+
+    .msg.assistant strong { color: #fafafa; font-weight: 600; }
+
+    .msg.assistant p { margin: 0.35rem 0; }
+    .msg.assistant p:first-child { margin-top: 0; }
+    .msg.assistant p:last-child { margin-bottom: 0; }
+
+    .msg.assistant ul, .msg.assistant ol {
+      margin: 0.35rem 0;
+      padding-left: 1.25rem;
+    }
+
+    .msg.assistant li { margin: 0.15rem 0; }
+
+    .msg.assistant code {
+      background: rgba(255,255,255,0.08);
+      padding: 0.1rem 0.35rem;
+      border-radius: 0.25rem;
+      font-size: 0.8rem;
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    }
+
+    .msg.assistant pre {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 0.5rem;
+      padding: 0.625rem 0.75rem;
+      margin: 0.5rem 0;
+      overflow-x: auto;
+      font-size: 0.8rem;
+    }
+
+    .msg.assistant pre code {
+      background: none;
+      padding: 0;
     }
 
     .welcome {
       align-self: center;
       text-align: center;
-      color: #71717a;
-      margin-top: auto;
-      margin-bottom: auto;
+      color: #52525b;
+      margin: auto;
       padding: 2rem;
     }
 
     .welcome h2 {
-      font-size: 1.25rem;
-      color: #a1a1aa;
+      font-size: 1.125rem;
+      color: #71717a;
       margin-bottom: 0.5rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
     }
 
-    .welcome p { font-size: 0.85rem; line-height: 1.6; }
+    .welcome p {
+      font-size: 0.8rem;
+      line-height: 1.65;
+    }
+
+    .welcome .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+
+    .welcome .examples button {
+      padding: 0.4rem 0.75rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0.625rem;
+      color: #a1a1aa;
+      font-size: 0.775rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .welcome .examples button:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.12);
+      color: #e4e4e7;
+    }
 
     form {
-      padding: 1rem 1.5rem;
-      border-top: 1px solid #27272a;
+      padding: 0.75rem 1rem 1rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
       display: flex;
       gap: 0.5rem;
+      background: rgba(10,10,10,0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     input {
       flex: 1;
-      padding: 0.7rem 1rem;
-      background: #1c1c1e;
-      border: 1px solid #27272a;
+      padding: 0.625rem 0.875rem;
+      background: #18181b;
+      border: 1px solid rgba(255,255,255,0.08);
       border-radius: 0.75rem;
       color: #e4e4e7;
-      font-size: 0.9rem;
+      font-size: 0.875rem;
       outline: none;
       transition: border-color 0.15s;
     }
 
-    input:focus { border-color: #3b82f6; }
-    input::placeholder { color: #52525b; }
+    input:focus { border-color: rgba(59,130,246,0.5); }
+    input::placeholder { color: #3f3f46; }
 
-    button {
-      padding: 0.7rem 1.25rem;
+    button[type="submit"] {
+      padding: 0.625rem 1.125rem;
       background: #2563eb;
       color: #fff;
       border: none;
       border-radius: 0.75rem;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 500;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
     }
 
-    button:hover { background: #1d4ed8; }
-    button:disabled { background: #1e3a5f; cursor: not-allowed; }
+    button[type="submit"]:hover { background: #1d4ed8; }
+    button[type="submit"]:disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
 
-    #chat::-webkit-scrollbar { width: 6px; }
-    #chat::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+    button[type="submit"] svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    #chat::-webkit-scrollbar { width: 4px; }
+    #chat::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+    #chat::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    @media (max-width: 480px) {
+      .msg-group { max-width: 88%; }
+      #chat { padding: 1rem 0.75rem; }
+      form { padding: 0.625rem 0.75rem 0.875rem; }
+    }
   </style>
 </head>
 <body>
@@ -153,16 +284,21 @@
   <div id="chat">
     <div class="welcome">
       <h2>Ask me anything</h2>
-      <p>
-        I can look up facts on Wikipedia and do math.<br />
-        Try: "What is the population of Tokyo?" or "What's 1729^2?"
-      </p>
+      <p>I can look up facts on Wikipedia and do math.</p>
+      <div class="examples">
+        <button type="button" onclick="sendExample(this)">What is the population of Tokyo?</button>
+        <button type="button" onclick="sendExample(this)">Who was Marie Curie?</button>
+        <button type="button" onclick="sendExample(this)">What's 1729^2?</button>
+      </div>
     </div>
   </div>
 
   <form id="form">
     <input id="input" type="text" placeholder="Type a message..." autocomplete="off" />
-    <button type="submit">Send</button>
+    <button type="submit">
+      Send
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
   </form>
 
   <script>
@@ -171,16 +307,78 @@
     const input = document.getElementById("input");
     let history = [];
 
+    function renderMarkdown(text) {
+      let html = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) =>
+        `<pre><code>${code.trim()}</code></pre>`
+      );
+      html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+      html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+
+      const lines = html.split("\n");
+      const blocks = [];
+      let listBuffer = [];
+      let inList = false;
+
+      for (const line of lines) {
+        const listMatch = line.match(/^[\s]*[-•]\s+(.*)/);
+        if (listMatch) {
+          inList = true;
+          listBuffer.push(`<li>${listMatch[1]}</li>`);
+        } else {
+          if (inList) {
+            blocks.push(`<ul>${listBuffer.join("")}</ul>`);
+            listBuffer = [];
+            inList = false;
+          }
+          const trimmed = line.trim();
+          if (trimmed.startsWith("<pre>")) {
+            blocks.push(trimmed);
+          } else if (trimmed) {
+            blocks.push(`<p>${trimmed}</p>`);
+          }
+        }
+      }
+      if (inList) blocks.push(`<ul>${listBuffer.join("")}</ul>`);
+
+      return blocks.join("");
+    }
+
     function addMessage(role, content, cls = "") {
       const welcome = chat.querySelector(".welcome");
       if (welcome) welcome.remove();
 
+      const group = document.createElement("div");
+      group.className = `msg-group ${role}`;
+
+      const label = document.createElement("div");
+      label.className = "msg-label";
+      label.textContent = role === "user" ? "You" : "Assistant";
+      group.appendChild(label);
+
       const div = document.createElement("div");
       div.className = `msg ${role} ${cls}`.trim();
-      div.textContent = content;
-      chat.appendChild(div);
+
+      if (role === "assistant" && !cls.includes("thinking")) {
+        div.innerHTML = renderMarkdown(content);
+      } else {
+        div.textContent = content;
+      }
+
+      group.appendChild(div);
+      chat.appendChild(group);
       chat.scrollTop = chat.scrollHeight;
       return div;
+    }
+
+    function sendExample(btn) {
+      input.value = btn.textContent;
+      form.dispatchEvent(new Event("submit"));
     }
 
     form.addEventListener("submit", async (e) => {
@@ -191,8 +389,8 @@
       input.value = "";
       addMessage("user", text);
 
-      const thinking = addMessage("assistant", "Thinking...", "thinking");
-      const btn = form.querySelector("button");
+      const thinking = addMessage("assistant", "Thinking", "thinking");
+      const btn = form.querySelector("button[type='submit']");
       btn.disabled = true;
 
       try {
@@ -208,7 +406,7 @@
         }
 
         const data = await res.json();
-        thinking.textContent = data.reply;
+        thinking.innerHTML = renderMarkdown(data.reply);
         thinking.classList.remove("thinking");
 
         history.push({ role: "user", content: text });
@@ -223,6 +421,8 @@
         input.focus();
       }
     });
+
+    input.focus();
   </script>
 </body>
 </html>
