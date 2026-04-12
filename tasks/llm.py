@@ -1,9 +1,10 @@
 """
-Shared Claude helpers: LLM instantiation, prompt execution, and JSON parsing.
+Shared Claude helpers using the raw Anthropic SDK.
 
-Used by plan, analyze, and synthesize tasks. The LLM is configured via
-environment variables (ANTHROPIC_MODEL, AGENT_TEMPERATURE) so the same
-code works across environments without code changes.
+Used by plan and synthesize tasks for simple, single-turn Claude calls
+where a full LangGraph agent loop is unnecessary. The LangGraph agent
+(tasks/agent.py) uses langchain-anthropic instead, because LangGraph
+needs the ChatModel interface for tool binding.
 
 The parse_json helper is deliberately lenient: Claude sometimes wraps JSON
 in markdown code fences or adds preamble text. The fallback extraction
@@ -14,24 +15,30 @@ without forcing function-calling mode.
 import json
 import os
 
-from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import HumanMessage, SystemMessage
+import anthropic
 
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
 TEMPERATURE = float(os.environ.get("AGENT_TEMPERATURE", "0.3"))
 
+_client = None
 
-def get_llm():
-    return ChatAnthropic(model=MODEL, temperature=TEMPERATURE)
+
+def get_client() -> anthropic.Anthropic:
+    global _client
+    if _client is None:
+        _client = anthropic.Anthropic()
+    return _client
 
 
 def ask(system: str, user: str) -> str:
-    response = get_llm().invoke([
-        SystemMessage(content=system),
-        HumanMessage(content=user),
-    ])
-    content = response.content
-    return content if isinstance(content, str) else str(content)
+    response = get_client().messages.create(
+        model=MODEL,
+        max_tokens=4096,
+        temperature=TEMPERATURE,
+        system=system,
+        messages=[{"role": "user", "content": user}],
+    )
+    return response.content[0].text
 
 
 def parse_json(raw: str, fallback: dict) -> dict:

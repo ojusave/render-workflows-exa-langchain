@@ -1,18 +1,20 @@
 """
-Research orchestrator: chains plan, search (fan-out), analyze (fan-out),
-and synthesize as subtasks.
+Research orchestrator: chains plan -> parallel research agents -> synthesize.
 
-This is the top-level task the web service triggers. It doesn't do any work
-itself: it chains four subtasks and coordinates them. Every subtask call
-(plan_research, search, analyze, synthesize) triggers a separate Workflow
-task run on its own compute instance.
+This is the top-level task the web service triggers. It coordinates three
+phases, each running on separate compute:
+
+  1. plan_research: Claude breaks the question into subtopics (single call)
+  2. research_subtopic (fan-out): a LangGraph agent per subtopic, in parallel
+  3. synthesize: Claude merges all findings into a report (single call)
+
+The orchestrator itself does no research work. It only awaits subtasks.
+Every await dispatches a separate Workflow task run on its own instance.
 
 Workflow config rationale:
-  - plan: starter (0.5 CPU, 512 MB) — the orchestrator only awaits subtasks;
-    it does no local compute.
-  - timeout: 300s — the full pipeline can take 1-2 minutes (plan + N searches
-    + N analyses + synthesis). 300s gives headroom for retries and cold starts
-    of subtask instances.
+  - plan: starter (0.5 CPU, 512 MB) — orchestrator only awaits, no compute.
+  - timeout: 600s — the full pipeline can take 2-4 minutes when agents loop
+    multiple times. 600s covers retries and cold starts across all subtasks.
   - retry: 1 retry, 5s wait — if the orchestrator itself fails (not a subtask),
     one retry is enough. Subtask failures are handled by their own retry config.
 """
@@ -22,8 +24,7 @@ import asyncio
 from render_sdk import Workflows, Retry
 
 from .plan import plan_research
-from .search import search
-from .analyze import analyze
+from .research_agent import research_subtopic
 from .synthesize import synthesize
 
 app = Workflows()
@@ -31,20 +32,16 @@ app = Workflows()
 
 @app.task(
     plan="starter",
-    timeout_seconds=300,
+    timeout_seconds=600,
     retry=Retry(max_retries=1, wait_duration_ms=5000, backoff_scaling=1),
 )
 async def research(question: str) -> dict:
-    """Full research pipeline via task chaining. Each step runs on its own compute."""
+    """Full research pipeline: plan -> parallel agents -> synthesize."""
     plan = await plan_research(question)
-    queries = plan.get("queries", [question])
+    subtopics = plan.get("subtopics", [{"topic": question, "criteria": "Find relevant sources."}])
 
-    search_results = await asyncio.gather(
-        *[search(q) for q in queries]
+    findings = await asyncio.gather(
+        *[research_subtopic(st["topic"], st["criteria"]) for st in subtopics]
     )
 
-    analyses = await asyncio.gather(
-        *[analyze(sd["query"], sd["results"]) for sd in search_results]
-    )
-
-    return await synthesize(question, list(analyses))
+    return await synthesize(question, list(findings))

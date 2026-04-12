@@ -1,12 +1,17 @@
 """
-Plan task: asks Claude to generate 3-5 targeted search queries.
+Plan task: asks Claude to break a question into subtopics with success criteria.
+
+Uses the raw Anthropic SDK (via tasks/llm.py) because this is a single-turn
+Claude call: no tools, no agent loop, no dynamic decisions. LangGraph would
+be overhead here.
+
+The output includes success criteria for each subtopic so the LangGraph
+research agent knows when it has gathered enough evidence to stop searching.
 
 Workflow config rationale:
   - plan: starter (0.5 CPU, 512 MB) — lightweight LLM call with a short prompt.
   - timeout: 45s — Claude should respond in <10s; 45s gives room for cold starts.
-  - retry: 2 retries, 2s base wait, 1.5x backoff — handles Claude rate limits
-    or transient API errors. Without retries, a single 429 from Anthropic
-    would kill the entire research pipeline.
+  - retry: 2 retries, 2s base wait, 1.5x backoff — handles Claude rate limits.
 """
 
 from render_sdk import Workflows, Retry
@@ -22,13 +27,23 @@ app = Workflows()
     retry=Retry(max_retries=2, wait_duration_ms=2000, backoff_scaling=1.5),
 )
 def plan_research(question: str) -> dict:
-    """Generate 3-5 targeted search queries for the research question."""
+    """Break a research question into subtopics with success criteria."""
     raw = ask(
         system=(
-            "You are a research planner. Given a question, generate 3-5 targeted web search queries "
-            "that would help answer it comprehensively. Return ONLY a JSON object with a 'queries' key "
-            "containing a list of query strings. No other text."
+            "You are a research planner. Given a question, break it into 3-5 subtopics "
+            "that a research agent should investigate separately. For each subtopic, "
+            "define what 'good enough' research looks like.\n\n"
+            "Return ONLY a JSON object with:\n"
+            '- "subtopics": a list of objects, each with:\n'
+            '  - "topic": a concise subtopic description\n'
+            '  - "criteria": what evidence the researcher should find before stopping\n'
+            "No other text."
         ),
         user=question,
     )
-    return parse_json(raw, {"queries": [question]})
+    fallback = {
+        "subtopics": [
+            {"topic": question, "criteria": "Find 3-5 relevant, recent sources with key findings."}
+        ]
+    }
+    return parse_json(raw, fallback)

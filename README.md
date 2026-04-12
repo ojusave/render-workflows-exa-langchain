@@ -2,131 +2,106 @@
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ojusave/langchain-test)
 
-A research agent that shows how [Render Workflows](https://render.com/workflows) solve real problems in AI pipelines: automatic retries when APIs fail, isolated compute per task, durable execution across crashes, and full observability in the Dashboard.
+A deep research agent where three tools each do what they're best at:
 
-Ask a question. The agent plans search queries, fans out parallel web searches, analyzes each result set with Claude, and synthesizes a structured report: all as chained workflow tasks that survive failures.
+- **[LangGraph](https://www.langchain.com/langgraph)** runs a ReAct agent loop: Claude dynamically decides what to search, evaluates results, and searches again or stops. The search strategy is non-deterministic and impossible to hardcode.
+- **[Render Workflows](https://render.com/workflows)** provides durable orchestration: parallel research agents on isolated compute with automatic retries, per-task timeouts, and full observability in the Dashboard.
+- **[Exa](https://exa.ai/)** provides AI-native semantic search as LangGraph tools: the agent queries with natural language and gets meaning-matched results, not SEO-optimized links.
 
-Built with [Render Workflows](https://render.com/workflows) + [Anthropic Claude](https://www.anthropic.com/) + [Exa](https://exa.ai/) + [LangChain](https://www.langchain.com/).
+Ask a question. The agent breaks it into subtopics, dispatches a LangGraph research agent per subtopic in parallel, and synthesizes a structured report with sources.
 
 ---
 
-## Why Workflows
+## Why Three Layers
 
-AI pipelines that call external APIs (LLMs, search engines, databases) are unreliable by nature. Here's what goes wrong without Workflows, and how Workflows fix each problem.
+Each tool solves a problem the others can't.
 
-### Problem 1: a single API failure kills the entire pipeline
+### Why LangGraph (not a hardcoded pipeline)
 
-Without Workflows, a research pipeline runs as one long function. If Exa returns a 503 on the third search query, the entire request fails: the two successful searches and the planning step are all wasted.
+A research question like "What are the latest advances in quantum computing?" can't be answered with a fixed number of searches. The agent might:
 
-```
-User asks question
-  → plan_research (Claude) ✓
-  → search("query 1") ✓
-  → search("query 2") ✓
-  → search("query 3") ✗ Exa 503
-  → ENTIRE REQUEST FAILS (all prior work lost)
-```
+1. Search "quantum computing breakthroughs 2025" and get good results
+2. Search "quantum error correction progress" and find sparse results
+3. Refine to "topological qubits recent papers" and find a great source
+4. Use `find_similar` on that source to discover related work
+5. Decide it has enough evidence and return findings
 
-**With Workflows**: each search is a separate task with its own retry config. The third search retries automatically (1s → 2s → 4s backoff). The other searches aren't affected. The pipeline completes.
+That's 4 searches. A different question might need 2 or 7. **LangGraph's ReAct loop lets Claude decide the search strategy at runtime.** A hardcoded `for query in queries: search(query)` pipeline can't do this.
 
-### Problem 2: a slow Claude call blocks your web server
+### Why Render Workflows (not one long function)
 
-Without Workflows, the web server runs the full pipeline in-process. Synthesis can take 30-40 seconds when Claude processes five analyses. During that time, the web server thread is blocked: other users get timeouts.
+When you run 3-5 LangGraph agents in parallel, each making multiple Claude + Exa calls:
 
-**With Workflows**: the web server starts one task and returns immediately. All compute runs on the workflow service's isolated instances. The web server stays responsive.
+- **A single Exa 503 shouldn't kill the whole pipeline.** Each agent task has its own retry config (3s base, 2x backoff). Other agents are unaffected.
+- **A slow agent shouldn't block your web server.** Each agent runs on its own compute instance. The web server starts one task and returns immediately.
+- **You need to see what happened.** The Render Dashboard shows the full task tree: which subtopic's agent failed, what it searched, how many retries it took.
+- **A server restart shouldn't lose progress.** The orchestrator is durable: already-completed subtasks don't re-run.
 
-### Problem 3: no visibility into what failed or why
+### Why Exa (not generic search)
 
-Without Workflows, you get a 500 error and dig through logs. Was it the planning step? Which search query failed? Did Claude return malformed JSON?
-
-**With Workflows**: every task run appears in the Render Dashboard as a linked task tree. You can see inputs, outputs, duration, retry history, and error messages for each individual step.
-
-```
-research (orchestrator)
-├── plan_research ✓ (2.1s)
-├── search "quantum computing 2025" ✓ (1.8s)
-├── search "quantum error correction" ✓ (2.3s)
-├── search "quantum supremacy updates" ✗→✓ (retry 1: 3.1s)
-├── analyze ✓ (8.2s)
-├── analyze ✓ (7.9s)
-├── analyze ✓ (9.1s)
-└── synthesize ✓ (12.4s)
-```
-
-### Problem 4: the server restarts and progress is lost
-
-Without Workflows, if the web server restarts mid-pipeline (deploy, OOM, crash), everything in-flight disappears. The user sees a broken connection and has to start over.
-
-**With Workflows**: the orchestrator task is durable. If the workflow service restarts, the Render runtime resumes execution from the last completed step. Already-completed subtasks don't re-run.
-
-### Problem 5: you can't right-size compute per step
-
-Without Workflows, every step runs on the same server with the same resources. Planning (tiny prompt, fast response) gets the same CPU/memory as synthesis (huge context, slow response).
-
-**With Workflows**: each task declares its own compute plan. Planning runs on a starter instance (0.5 CPU, 512 MB). Synthesis runs on a standard instance (1 CPU, 2 GB). You pay for what each step actually needs.
+The LangGraph agent queries with natural language: "fascinating recent breakthroughs in quantum error correction". Exa's neural search returns meaning-matched results. Google would return SEO-optimized listicles. `ExaFindSimilarResults` enables discovery chains: "find pages similar to this great paper I found."
 
 ---
 
 ## How It Works
 
-The `research` orchestrator task chains four subtasks. Every box below is a separate task run: independently provisioned, retriable, and visible in the Dashboard.
-
 ```mermaid
 flowchart TD
     Q["User question"] --> R["research (orchestrator task)"]
     R --> P["plan_research"]
-    P -->|"3-5 queries"| S1["search"]
-    P -->|"3-5 queries"| S2["search"]
-    P -->|"3-5 queries"| S3["search"]
-    S1 --> A1["analyze"]
-    S2 --> A2["analyze"]
-    S3 --> A3["analyze"]
-    A1 --> SY["synthesize"]
-    A2 --> SY
-    A3 --> SY
-    SY --> RPT["Structured report"]
+    P -->|"subtopics + criteria"| Fan["Parallel fan-out"]
 
-    subgraph parallel_search ["Parallel fan-out (asyncio.gather)"]
-        S1
-        S2
-        S3
+    Fan --> R1["research_subtopic"]
+    Fan --> R2["research_subtopic"]
+    Fan --> R3["research_subtopic"]
+
+    R1 --> Synth["synthesize"]
+    R2 --> Synth
+    R3 --> Synth
+    Synth --> RPT["Structured report"]
+
+    subgraph parallel_agents ["Parallel agents (asyncio.gather)"]
+        R1
+        R2
+        R3
     end
 
-    subgraph parallel_analyze ["Parallel fan-out (asyncio.gather)"]
-        A1
-        A2
-        A3
+    subgraph langgraph_loop ["Inside each research_subtopic (LangGraph ReAct)"]
+        LLM["Claude decides next action"]
+        LLM -->|"tool_call"| ExaSearch["exa_search"]
+        LLM -->|"tool_call"| ExaSimilar["exa_find_similar"]
+        ExaSearch -->|"observation"| LLM
+        ExaSimilar -->|"observation"| LLM
+        LLM -->|"no more tool calls"| Done["Return findings"]
     end
 ```
 
-The orchestrator uses `asyncio.gather` for parallel fan-out, matching the pattern from [Render's docs on chaining parallel runs](https://render.com/docs/workflows-defining#parallel-runs):
+The orchestrator (a Render Workflow task) chains three phases:
 
 ```python
 @app.task
 async def research(question: str) -> dict:
-    plan = await plan_research(question)
-    search_results = await asyncio.gather(*[search(q) for q in plan["queries"]])
-    analyses = await asyncio.gather(*[analyze(s["query"], s["results"]) for s in search_results])
-    return await synthesize(question, list(analyses))
+    plan = await plan_research(question)              # Claude breaks question into subtopics
+    findings = await asyncio.gather(                   # Parallel LangGraph agents
+        *[research_subtopic(st["topic"], st["criteria"]) for st in plan["subtopics"]]
+    )
+    return await synthesize(question, list(findings))  # Claude merges into report
 ```
+
+Each `await` dispatches a separate Workflow task on its own compute instance.
 
 ---
 
-## Per-Task Configuration
+## What Each Tool Does
 
-Each task declares its own compute plan, timeout, and retry strategy. This is where Workflows add the most value: every config decision maps to a real failure mode.
+| Step | Tool | What happens | Config |
+|---|---|---|---|
+| **Plan** | Anthropic SDK | Single Claude call: break question into subtopics with success criteria | starter, 45s, 2 retries |
+| **Research** (per subtopic) | LangGraph + Exa | ReAct agent loop: Claude calls `exa_search` / `exa_find_similar` until it has enough evidence. Non-deterministic: 2-8 searches per subtopic. | standard, 120s, 2 retries |
+| **Synthesize** | Anthropic SDK | Single Claude call: merge all findings into a structured report | standard, 90s, 1 retry |
+| **Orchestrate** | Render Workflows | Chain the above, fan out research agents in parallel | starter, 600s, 1 retry |
 
-| Task | Plan | Timeout | Retries | Backoff | Why |
-|---|---|---|---|---|---|
-| `research` | starter | 300s | 1 × 5s | flat | Orchestrator only: awaits subtasks, no local compute. Long timeout covers the full pipeline. |
-| `plan_research` | starter | 45s | 2 × 2s | 1.5× | Lightweight Claude call. Retries handle rate limits (429s). |
-| `search` | starter | 30s | 3 × 1s | 2× | I/O-bound Exa API call. 3 retries with exponential backoff (1s → 2s → 4s) because network failures are transient. |
-| `analyze` | standard | 60s | 2 × 2s | 1.5× | Heavier Claude call processing ~10 KB of search results. Standard plan for more memory. |
-| `synthesize` | standard | 90s | 1 × 3s | flat | Heaviest Claude call: all analyses concatenated. 1 retry because input is deterministic. |
-
-**starter** = 0.5 CPU, 512 MB. **standard** = 1 CPU, 2 GB.
-
-The config lives directly in each task file (e.g. `tasks/search.py`) with comments explaining the rationale. There are no hidden defaults.
+**Why two Claude interfaces?** Plan and synthesize are single-turn calls: send a prompt, get a response. The raw `anthropic` SDK is simpler and has fewer dependencies for this. Research agents need tool-calling loops with message state management: LangGraph's `create_react_agent` handles this cleanly.
 
 ---
 
@@ -143,26 +118,43 @@ sequenceDiagram
     Web-->>Browser: SSE: "Researching..."
 
     Note over WF: research orchestrator task
-    WF->>WF: plan_research (Claude)
-    par Parallel search
-        WF->>WF: search (Exa)
-        WF->>WF: search (Exa)
-        WF->>WF: search (Exa)
+    WF->>WF: plan_research (Anthropic SDK)
+
+    par Parallel LangGraph agents
+        Note over WF: research_subtopic 1
+        WF->>WF: Claude -> exa_search -> Claude -> exa_search -> findings
+        Note over WF: research_subtopic 2
+        WF->>WF: Claude -> exa_search -> exa_find_similar -> findings
+        Note over WF: research_subtopic 3
+        WF->>WF: Claude -> exa_search -> findings
     end
-    par Parallel analyze
-        WF->>WF: analyze (Claude)
-        WF->>WF: analyze (Claude)
-        WF->>WF: analyze (Claude)
-    end
-    WF->>WF: synthesize (Claude)
+
+    WF->>WF: synthesize (Anthropic SDK)
     WF-->>Web: report
     Web-->>Browser: SSE: done + report
 ```
 
 Two Render services:
 
-- **Web service** (`research-agent`): thin FastAPI layer that serves the UI, starts the `research` orchestrator task via the Render SDK, and streams the result back via SSE. Does no research work.
-- **Workflow service** (`research-agent-workflow`): defines five tasks (`research`, `plan_research`, `search`, `analyze`, `synthesize`). The `research` task chains the other four. Each chained call spawns a separate task run on its own compute instance.
+- **Web service** (`research-agent`): thin FastAPI layer. Serves the UI, starts the orchestrator task, streams the result via SSE. Does no research work.
+- **Workflow service** (`research-agent-workflow`): four tasks. The `research` orchestrator chains `plan_research`, parallel `research_subtopic` agents, and `synthesize`. Each task run gets its own compute instance.
+
+---
+
+## Dashboard Task Tree
+
+When a research job runs, the Render Dashboard shows:
+
+```
+research (orchestrator)                    starter  600s
+├── plan_research                          starter   45s   ✓ 2.1s
+├── research_subtopic "quantum hardware"   standard 120s   ✓ 34s (5 searches)
+├── research_subtopic "error correction"   standard 120s   ✗→✓ retry 1: 28s
+├── research_subtopic "quantum software"   standard 120s   ✓ 22s (3 searches)
+└── synthesize                             standard  90s   ✓ 12s
+```
+
+Every task run shows inputs, outputs, duration, retry history, and error messages. You can see exactly which subtopic's agent failed, what it searched, and why.
 
 ---
 
@@ -193,30 +185,31 @@ Don't have a Render account? [Sign up here](https://render.com/register).
 |---|---|---|---|
 | `ANTHROPIC_API_KEY` | Yes | — | Anthropic API key |
 | `EXA_API_KEY` | Yes | — | Exa API key for web search |
-| `ANTHROPIC_MODEL` | No | `claude-sonnet-4-20250514` | Claude model to use |
+| `ANTHROPIC_MODEL` | No | `claude-sonnet-4-20250514` | Claude model |
 | `AGENT_TEMPERATURE` | No | `0.3` | LLM temperature |
 
 ## Project Structure
 
 ```
-├── main.py                  # FastAPI web service (thin HTTP layer)
+├── main.py                      # FastAPI web service (thin HTTP layer)
 ├── pipeline/
-│   ├── __init__.py          # Exports run_pipeline
-│   └── orchestrator.py      # Starts workflow task, streams SSE to browser
+│   ├── __init__.py              # Exports run_pipeline
+│   └── orchestrator.py          # Starts workflow task, streams SSE
 ├── tasks/
-│   ├── __init__.py          # Combines task apps into one Workflows entry point
-│   ├── __main__.py          # Workflow service entry point (python -m tasks)
-│   ├── llm.py               # Shared Claude helpers (ask, parse_json)
-│   ├── research.py          # Orchestrator: chains all subtasks
-│   ├── plan.py              # plan_research: generates search queries via Claude
-│   ├── search.py            # search: Exa web search with 3 retries
-│   ├── analyze.py           # analyze: extracts findings from results via Claude
-│   └── synthesize.py        # synthesize: merges analyses into final report
+│   ├── __init__.py              # Combines task apps into one entry point
+│   ├── __main__.py              # Workflow service entry point (python -m tasks)
+│   ├── llm.py                   # Raw Anthropic SDK helpers (plan, synthesize)
+│   ├── tools.py                 # Exa tools for LangGraph (search, find_similar)
+│   ├── agent.py                 # LangGraph ReAct agent (Claude + Exa tools)
+│   ├── research_agent.py        # Workflow task wrapping the LangGraph agent
+│   ├── plan.py                  # plan_research: subtopics via Anthropic SDK
+│   ├── synthesize.py            # synthesize: merge findings via Anthropic SDK
+│   └── research.py              # Orchestrator: chains plan -> agents -> synthesize
 ├── static/
-│   └── index.html           # Research UI
-├── render.yaml              # Render Blueprint (web + workflow services)
-├── requirements.txt         # Python dependencies
-└── .env.example             # Environment variable reference
+│   └── index.html               # Research UI
+├── render.yaml                  # Render Blueprint (web + workflow services)
+├── requirements.txt             # Python dependencies
+└── .env.example                 # Environment variable reference
 ```
 
 ## API
