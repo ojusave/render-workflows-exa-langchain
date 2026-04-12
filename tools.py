@@ -1,20 +1,12 @@
-import httpx
 from langchain_core.tools import tool
+from langchain_exa import ExaSearchResults
 
 
-@tool
-async def search_wikipedia(query: str) -> str:
-    """Search Wikipedia for a topic and return a summary. Use this when you need factual information about a person, place, event, or concept."""
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            "https://en.wikipedia.org/api/rest_v1/page/summary/" + query.replace(" ", "_"),
-            headers={"User-Agent": "langchain-example/1.0"},
-            timeout=10,
-        )
-        if resp.status_code == 200:
-            data = resp.json()
-            return data.get("extract", "No summary available.")
-        return f"Could not find a Wikipedia article for '{query}'."
+exa_search = ExaSearchResults(
+    num_results=3,
+    text_contents_options={"max_characters": 3000},
+    summary=True,
+)
 
 
 @tool

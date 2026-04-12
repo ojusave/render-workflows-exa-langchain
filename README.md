@@ -4,11 +4,11 @@
 
 A FastAPI app demonstrating LangChain's agent framework with [Render Workflows](https://render.com/workflows) for durable, isolated agent execution. The agent can:
 
-- **Search Wikipedia** for factual information
+- **Search the web** via [Exa](https://exa.ai/) for real-time information
 - **Calculate** math expressions
 - **Maintain conversation context** across messages
 
-Built with LangChain + LangGraph + Anthropic Claude, running on [Render](https://render.com/).
+Built with LangChain + LangGraph + Anthropic Claude + [Exa](https://exa.ai/), running on [Render](https://render.com/).
 
 ## Deploy
 
@@ -16,6 +16,7 @@ Click the **Deploy to Render** button above. You'll be prompted to set:
 
 - `RENDER_API_KEY`: your [Render API key](https://render.com/docs/api#1-create-an-api-key) (for the web service)
 - `ANTHROPIC_API_KEY`: your Anthropic API key (for the workflow service)
+- `EXA_API_KEY`: your [Exa API key](https://exa.ai/) (for the workflow service)
 
 Then click **Apply**. The Blueprint creates both services automatically.
 
@@ -26,7 +27,7 @@ Don't have a Render account? [Sign up here](https://render.com/register).
 ```
 Browser  →  FastAPI (web service)  →  Render Workflow  →  LangGraph Agent  →  Claude
                                            ↕
-                                  Tools (Wikipedia, Calculator)
+                                  Tools (Exa Search, Calculator)
 ```
 
 The app runs as two Render services:
@@ -50,6 +51,7 @@ This separation means agent reasoning runs on its own compute, with retry logic 
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `ANTHROPIC_API_KEY` | Yes | — | Your Anthropic API key |
+| `EXA_API_KEY` | Yes | — | Your Exa API key for web search |
 | `ANTHROPIC_MODEL` | No | `claude-sonnet-4-20250514` | Model to use |
 | `AGENT_TEMPERATURE` | No | `0.3` | LLM temperature |
 
@@ -59,7 +61,7 @@ This separation means agent reasoning runs on its own compute, with retry logic 
 ├── main.py           # FastAPI web service (API gateway)
 ├── workflow.py       # Render Workflow task definition
 ├── agent.py          # Agent config, system prompt, builder
-├── tools.py          # Tool definitions (Wikipedia, calculator)
+├── tools.py          # Tool definitions (Exa search, calculator)
 ├── static/
 │   └── index.html    # Chat UI
 ├── render.yaml       # Render Blueprint (web + workflow)

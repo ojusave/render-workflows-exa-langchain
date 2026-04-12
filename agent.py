@@ -3,10 +3,10 @@ import os
 from langchain_anthropic import ChatAnthropic
 from langgraph.prebuilt import create_react_agent
 
-from tools import search_wikipedia, calculate
+from tools import exa_search, calculate
 
 SYSTEM_PROMPT = """You are a helpful assistant. You have access to tools:
-- search_wikipedia: look up factual information
+- exa_search: search the web for real-time information on any topic
 - calculate: do math
 
 Use tools when they'd help answer the user's question. Be concise and friendly."""
@@ -21,4 +21,4 @@ def build_agent():
         return None
 
     llm = ChatAnthropic(model=MODEL, temperature=TEMPERATURE)
-    return create_react_agent(llm, tools=[search_wikipedia, calculate])
+    return create_react_agent(llm, tools=[exa_search, calculate])

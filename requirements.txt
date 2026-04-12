@@ -2,6 +2,6 @@ fastapi>=0.115.0
 uvicorn>=0.34.0
 langchain>=1.2.15
 langchain-anthropic>=1.4.0
+langchain-exa>=0.2.0
 langgraph>=0.4.10
-httpx>=0.28.0
 render_sdk>=0.6.0
