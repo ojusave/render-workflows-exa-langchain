@@ -503,6 +503,21 @@
       form.dispatchEvent(new Event("submit"));
     }
 
+    function parseSSE(chunk) {
+      const events = [];
+      const parts = chunk.split("\n\n");
+      for (const part of parts) {
+        if (!part.trim()) continue;
+        let event = "message", data = "";
+        for (const line of part.split("\n")) {
+          if (line.startsWith("event: ")) event = line.slice(7);
+          else if (line.startsWith("data: ")) data = line.slice(6);
+        }
+        if (data) events.push({ event, data: JSON.parse(data) });
+      }
+      return events;
+    }
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const text = input.value.trim();
@@ -511,7 +526,7 @@
       input.value = "";
       addMessage("user", text);
 
-      const thinking = addMessage("assistant", "Thinking", "thinking");
+      const thinking = addMessage("assistant", "Queuing agent", "thinking");
       const btn = form.querySelector("button[type='submit']");
       btn.disabled = true;
 
@@ -522,19 +537,39 @@
           body: JSON.stringify({ message: text, history }),
         });
 
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.detail || "Request failed");
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let reply = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const events = parseSSE(buffer);
+          buffer = "";
+
+          for (const { event, data } of events) {
+            if (event === "status") {
+              thinking.textContent = data.message;
+            } else if (event === "done") {
+              reply = data.reply;
+              thinking.innerHTML = renderMarkdown(reply);
+              thinking.classList.remove("thinking");
+            } else if (event === "error") {
+              thinking.textContent = "Error: " + data.message;
+              thinking.classList.remove("thinking");
+            }
+          }
+          chat.scrollTop = chat.scrollHeight;
         }
 
-        const data = await res.json();
-        thinking.innerHTML = renderMarkdown(data.reply);
-        thinking.classList.remove("thinking");
-
-        history.push({ role: "user", content: text });
-        history.push({ role: "assistant", content: data.reply });
-
-        if (history.length > 20) history = history.slice(-20);
+        if (reply) {
+          history.push({ role: "user", content: text });
+          history.push({ role: "assistant", content: reply });
+          if (history.length > 20) history = history.slice(-20);
+        }
       } catch (err) {
         thinking.textContent = "Error: " + err.message;
         thinking.classList.remove("thinking");
