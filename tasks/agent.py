@@ -30,7 +30,7 @@ from .tools import build_tools
 
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
 TEMPERATURE = float(os.environ.get("AGENT_TEMPERATURE", "0.3"))
-MAX_STEPS = 100
+MAX_STEPS = 25
 
 
 def run_research_agent(subtopic: str, criteria: str) -> dict:
@@ -45,10 +45,11 @@ def run_research_agent(subtopic: str, criteria: str) -> dict:
         "- exa_search: semantic web search. Use natural language queries.\n"
         "- exa_find_similar_results: given a URL you found useful, find related pages.\n\n"
         "Research strategy:\n"
-        "1. Start with 1-2 broad searches on the subtopic.\n"
-        "2. If you find a particularly good source, use find_similar to discover related work.\n"
-        "3. Keep searching until you have enough evidence to meet the success criteria.\n"
-        "4. When done, return your findings as a JSON object with:\n"
+        "1. Do ONE broad search on the subtopic.\n"
+        "2. Only do a second search if the first returned very few results.\n"
+        "3. Do NOT use find_similar unless absolutely necessary.\n"
+        "4. Stop as soon as you have 2-3 good sources. Do not over-research.\n"
+        "5. Return your findings as a JSON object with:\n"
         '   - "findings": a detailed paragraph summarizing what you found\n'
         '   - "key_points": a list of 3-5 concise bullet points\n'
         '   - "sources": a list of objects with "title" and "url" keys\n'

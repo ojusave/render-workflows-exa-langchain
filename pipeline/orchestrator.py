@@ -29,10 +29,9 @@ render = RenderAsync()
 # (min_elapsed_seconds, label)
 _PHASES = [
     (0, "Planning research approach…"),
-    (12, "Searching for sources…"),
-    (40, "Deep-diving into subtopics…"),
-    (80, "Analyzing findings…"),
-    (130, "Synthesizing final report…"),
+    (10, "Searching for sources…"),
+    (25, "Analyzing findings…"),
+    (50, "Synthesizing final report…"),
 ]
 
 
@@ -105,13 +104,9 @@ async def run_pipeline(question: str):
             })
 
         elapsed = int(time.monotonic() - t0)
-        print(f"[PIPELINE] finished: status={status_val}, elapsed={elapsed}s", flush=True)
-        print(f"[PIPELINE] results type={type(details.results)}", flush=True)
-        print(f"[PIPELINE] results value={repr(details.results)[:2000]}", flush=True)
 
         if status_val == "completed":
             report = _extract_report(details.results)
-            print(f"[PIPELINE] report keys={list(report.keys()) if isinstance(report, dict) else type(report)}", flush=True)
 
             if report:
                 yield sse("done", {"report": report, "elapsed": elapsed})
@@ -127,9 +122,7 @@ async def run_pipeline(question: str):
             yield sse("error", {"message": f"Task was {status_val}", "elapsed": elapsed})
 
     except TaskRunError as e:
-        print(f"[PIPELINE] TaskRunError: {e}", flush=True)
         yield sse("error", {"message": str(e)})
 
     except Exception as e:
-        print(f"[PIPELINE] Exception {type(e).__name__}: {e}", flush=True)
         yield sse("error", {"message": str(e)})
