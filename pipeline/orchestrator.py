@@ -38,6 +38,22 @@ def sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, default=str)}\n\n"
 
 
+def _extract_report(results) -> dict:
+    """Pull the report dict out of whatever shape the SDK gives us for results."""
+    if not results:
+        return {}
+
+    # results might be a list wrapping the return value, or the value itself
+    raw = results
+    if isinstance(results, list) and len(results) > 0:
+        raw = results[0]
+
+    if isinstance(raw, dict):
+        return raw
+
+    return _to_dict(raw) if raw is not None else {}
+
+
 async def run_pipeline(question: str):
     """Start the research orchestrator task and yield SSE events until it completes."""
     try:
@@ -50,15 +66,23 @@ async def run_pipeline(question: str):
 
         finished = await started
 
-        report = {}
-        if finished.results:
-            raw = finished.results[0]
-            report = _to_dict(raw) if not isinstance(raw, dict) else raw
+        print(f"[PIPELINE] status={finished.status}", flush=True)
+        print(f"[PIPELINE] results type={type(finished.results)}", flush=True)
+        print(f"[PIPELINE] results value={finished.results!r}"[:2000], flush=True)
 
-        yield sse("done", {"report": report})
+        report = _extract_report(finished.results)
+
+        print(f"[PIPELINE] extracted report keys={list(report.keys()) if isinstance(report, dict) else type(report)}", flush=True)
+
+        if not report:
+            yield sse("error", {"message": "Workflow completed but returned empty results. Check workflow service logs."})
+        else:
+            yield sse("done", {"report": report})
 
     except TaskRunError as e:
+        print(f"[PIPELINE] TaskRunError: {e}", flush=True)
         yield sse("error", {"message": str(e)})
 
     except Exception as e:
+        print(f"[PIPELINE] Exception {type(e).__name__}: {e}", flush=True)
         yield sse("error", {"message": str(e)})

@@ -586,9 +586,11 @@
           buffer = remainder;
 
           for (const { event, data } of events) {
+            console.log("[SSE]", event, JSON.stringify(data).slice(0, 500));
             if (event === "status") {
               loadingMsg.textContent = data.message || "Researching...";
             } else if (event === "done") {
+              console.log("[SSE] report keys:", data.report ? Object.keys(data.report) : "null/empty");
               showReport(data.report);
             } else if (event === "error") {
               showError(data.message || "Unknown error");
@@ -596,7 +598,9 @@
           }
           mainEl.scrollTop = mainEl.scrollHeight;
         }
+        console.log("[SSE] stream ended, remaining buffer:", JSON.stringify(buffer));
       } catch (err) {
+        console.error("[SSE] fetch error:", err);
         showError(err.message);
       } finally {
         btn.disabled = false;

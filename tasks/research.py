@@ -38,10 +38,20 @@ app = Workflows()
 async def research(question: str) -> dict:
     """Full research pipeline: plan -> parallel agents -> synthesize."""
     plan = await plan_research(question)
+    print(f"[RESEARCH] plan type={type(plan)}, value={str(plan)[:500]}", flush=True)
+
     subtopics = plan.get("subtopics", [{"topic": question, "criteria": "Find relevant sources."}])
+    print(f"[RESEARCH] {len(subtopics)} subtopics", flush=True)
 
     findings = await asyncio.gather(
         *[research_subtopic(st["topic"], st["criteria"]) for st in subtopics]
     )
+    print(f"[RESEARCH] findings count={len(findings)}, types={[type(f).__name__ for f in findings]}", flush=True)
+    for i, f in enumerate(findings):
+        print(f"[RESEARCH] finding[{i}] keys={list(f.keys()) if isinstance(f, dict) else 'NOT_DICT'}", flush=True)
 
-    return await synthesize(question, list(findings))
+    result = await synthesize(question, list(findings))
+    print(f"[RESEARCH] final result type={type(result).__name__}, keys={list(result.keys()) if isinstance(result, dict) else 'NOT_DICT'}", flush=True)
+    print(f"[RESEARCH] final result preview={str(result)[:500]}", flush=True)
+
+    return result
