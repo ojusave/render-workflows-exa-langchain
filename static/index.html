@@ -316,6 +316,42 @@
       white-space: nowrap;
     }
 
+    .feedback-bar {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .feedback-bar span {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .feedback-btn {
+      width: 32px; height: 32px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      border-radius: 4px;
+    }
+
+    .feedback-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+    .feedback-btn.selected { border-color: var(--render-purple); color: var(--render-purple); background: rgba(108,99,255,0.1); }
+    .feedback-btn:disabled { opacity: 0.5; cursor: default; }
+    .feedback-btn svg { width: 16px; height: 16px; }
+
+    .feedback-thanks {
+      font-size: 0.75rem;
+      color: var(--green);
+      animation: fadeUp 0.2s ease-out;
+    }
+
     form {
       padding: 0.75rem 1rem 1rem;
       border-top: 1px solid var(--border);
@@ -394,7 +430,7 @@
       <span class="tag">Render Workflows + Exa + Claude</span>
     </div>
     <div class="actions">
-      <a href="https://github.com/ojusave/langchain-test" target="_blank" rel="noopener" class="header-btn">
+      <a id="github-btn" href="" target="_blank" rel="noopener" class="header-btn">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
         <span class="btn-label">GitHub</span>
       </a>
@@ -459,7 +495,7 @@
     <span class="sep">&middot;</span>
     <a href="https://render.com/" target="_blank" rel="noopener">Powered by Render</a>
     <span class="sep">&middot;</span>
-    <a href="https://github.com/ojusave/langchain-test" target="_blank" rel="noopener">Source</a>
+    <a id="source-link" href="" target="_blank" rel="noopener">Source</a>
   </footer>
 
   <script>
@@ -477,6 +513,8 @@
 
     document.getElementById("signup-btn").href = renderSignupUrlWithUtms("navbar_button");
     document.getElementById("deploy-btn").href = `https://render.com/deploy?repo=${encodeURIComponent(GITHUB_REPO)}`;
+    document.getElementById("github-btn").href = GITHUB_REPO;
+    document.getElementById("source-link").href = GITHUB_REPO;
 
     const form = document.getElementById("form");
     const input = document.getElementById("input");
@@ -490,12 +528,13 @@
 
     let timerInterval = null;
     let startTime = 0;
+    let currentRunId = null;
 
     const PHASE_THRESHOLDS = [
       { key: "plan", at: 0 },
-      { key: "search", at: 12 },
-      { key: "analyze", at: 40 },
-      { key: "synthesize", at: 80 },
+      { key: "search", at: 10 },
+      { key: "analyze", at: 25 },
+      { key: "synthesize", at: 50 },
     ];
 
     function formatElapsed(sec) {
@@ -603,8 +642,45 @@
         html += `</ul></div>`;
       }
 
+      if (currentRunId) {
+        html += `<div class="feedback-bar" id="feedback-bar">`;
+        html += `<span>Was this helpful?</span>`;
+        html += `<button class="feedback-btn" onclick="sendFeedback(1, this)" title="Helpful">`;
+        html += `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>`;
+        html += `</button>`;
+        html += `<button class="feedback-btn" onclick="sendFeedback(0, this)" title="Not helpful">`;
+        html += `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0122 4v7a2.31 2.31 0 01-2.33 2H17"/></svg>`;
+        html += `</button>`;
+        html += `</div>`;
+      }
+
       report.innerHTML = html;
       report.style.display = "block";
+    }
+
+    async function sendFeedback(score, btn) {
+      if (!currentRunId) return;
+      const bar = document.getElementById("feedback-bar");
+      if (!bar) return;
+
+      bar.querySelectorAll(".feedback-btn").forEach(b => {
+        b.disabled = true;
+        b.classList.remove("selected");
+      });
+      btn.classList.add("selected");
+
+      try {
+        await fetch("/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ run_id: currentRunId, score }),
+        });
+      } catch (e) {}
+
+      const thanks = document.createElement("span");
+      thanks.className = "feedback-thanks";
+      thanks.textContent = "Thanks for your feedback";
+      bar.appendChild(thanks);
     }
 
     function parseSSE(text) {
@@ -673,6 +749,7 @@
       if (!text) return;
 
       input.value = "";
+      currentRunId = null;
       showLoading();
 
       const btn = form.querySelector("button[type='submit']");
@@ -704,6 +781,7 @@
                 updatePhaseSteps(data.elapsed);
               }
             } else if (event === "done") {
+              currentRunId = data.run_id || null;
               showReport(data.report);
             } else if (event === "error") {
               showError(data.message || "Unknown error");

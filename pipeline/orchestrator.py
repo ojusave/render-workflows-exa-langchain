@@ -20,6 +20,8 @@ import time
 from render_sdk import RenderAsync
 from render_sdk.client.errors import TaskRunError
 
+from .tracking import start_run, complete_run, fail_run
+
 WORKFLOW_SLUG = os.environ.get("WORKFLOW_SLUG", "research-agent-workflow")
 POLL_INTERVAL = 4  # seconds between status checks
 
@@ -72,8 +74,9 @@ def _phase_message(elapsed: int) -> str:
 
 async def run_pipeline(question: str):
     """Start the research task and poll for completion, streaming progress."""
+    run_id = None
     try:
-        yield sse("status", {"message": "Starting research…", "elapsed": 0})
+        run_id = start_run(question)
 
         started = await render.workflows.start_task(
             f"{WORKFLOW_SLUG}/research", {"question": question}
@@ -82,7 +85,7 @@ async def run_pipeline(question: str):
         t0 = time.monotonic()
 
         yield sse("status", {
-            "message": "Planning research approach…",
+            "message": _phase_message(0),
             "task_run_id": task_run_id,
             "elapsed": 0,
         })
@@ -109,7 +112,8 @@ async def run_pipeline(question: str):
             report = _extract_report(details.results)
 
             if report:
-                yield sse("done", {"report": report, "elapsed": elapsed})
+                complete_run(run_id, report)
+                yield sse("done", {"report": report, "run_id": run_id, "elapsed": elapsed})
             else:
                 yield sse("error", {
                     "message": "Workflow completed but returned empty results. Check workflow logs.",
@@ -117,12 +121,16 @@ async def run_pipeline(question: str):
                 })
         elif status_val == "failed":
             err = getattr(details, "error", None) or "Task failed"
+            fail_run(run_id, str(err))
             yield sse("error", {"message": str(err), "elapsed": elapsed})
         else:
+            fail_run(run_id, f"Task was {status_val}")
             yield sse("error", {"message": f"Task was {status_val}", "elapsed": elapsed})
 
     except TaskRunError as e:
+        fail_run(run_id, str(e))
         yield sse("error", {"message": str(e)})
 
     except Exception as e:
+        fail_run(run_id, str(e))
         yield sse("error", {"message": str(e)})

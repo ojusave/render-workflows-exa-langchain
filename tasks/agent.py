@@ -21,21 +21,17 @@ LangGraph is used here instead of a raw while-loop because:
     if needed later
 """
 
-import os
-
-from langchain_anthropic import ChatAnthropic
 from langgraph.prebuilt import create_react_agent
 
+from .llm import get_model, parse_json
 from .tools import build_tools
 
-MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
-TEMPERATURE = float(os.environ.get("AGENT_TEMPERATURE", "0.3"))
 MAX_STEPS = 25
 
 
 def run_research_agent(subtopic: str, criteria: str) -> dict:
     """Run a ReAct agent that researches a subtopic using Exa tools."""
-    model = ChatAnthropic(model=MODEL, temperature=TEMPERATURE)
+    model = get_model()
     tools = build_tools()
 
     system_prompt = (
@@ -74,7 +70,6 @@ def run_research_agent(subtopic: str, criteria: str) -> dict:
             for block in final_text
         )
 
-    from .llm import parse_json
     return parse_json(final_text, {
         "findings": final_text,
         "key_points": [],

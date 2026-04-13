@@ -1,17 +1,14 @@
 """
 Plan task: asks Claude to break a question into subtopics with success criteria.
 
-Uses the raw Anthropic SDK (via tasks/llm.py) because this is a single-turn
-Claude call: no tools, no agent loop, no dynamic decisions. LangGraph would
-be overhead here.
-
-The output includes success criteria for each subtopic so the LangGraph
-research agent knows when it has gathered enough evidence to stop searching.
+Single-turn Claude call via the shared ChatAnthropic model (tasks/llm.py).
+The output includes success criteria for each subtopic so the research
+agent knows when it has gathered enough evidence to stop searching.
 
 Workflow config rationale:
-  - plan: starter (0.5 CPU, 512 MB) — lightweight LLM call with a short prompt.
-  - timeout: 45s — Claude should respond in <10s; 45s gives room for cold starts.
-  - retry: 2 retries, 2s base wait, 1.5x backoff — handles Claude rate limits.
+  - plan: starter (0.5 CPU, 512 MB): lightweight LLM call with a short prompt.
+  - timeout: 45s: Claude should respond in <10s; 45s gives room for cold starts.
+  - retry: 2 retries, 2s base wait, 1.5x backoff: handles Claude rate limits.
 """
 
 from render_sdk import Workflows, Retry

@@ -19,8 +19,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from pipeline import run_pipeline
+from feedback import router as feedback_router
 
 app = FastAPI(title="Research Agent")
+app.include_router(feedback_router)
 
 app.add_middleware(
     CORSMiddleware,

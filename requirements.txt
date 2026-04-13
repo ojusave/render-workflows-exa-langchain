@@ -2,13 +2,13 @@
 fastapi>=0.115.0
 uvicorn>=0.34.0
 
-# LLM: raw SDK for simple calls (plan, synthesize)
-anthropic>=0.42.0
-
-# LangGraph agent: ReAct loop with tool-calling
+# LangGraph agent + shared Claude model
 langgraph>=0.3.0
 langchain-anthropic>=0.3.0
 langchain-exa>=0.2.0
 
 # Workflow orchestration
 render_sdk>=0.6.0
+
+# Observability: LangSmith tracing + feedback (optional, env-driven)
+langsmith>=0.3.0

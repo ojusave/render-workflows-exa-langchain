@@ -2,13 +2,13 @@
 Tasks package: combines all workflow task apps into a single Workflows entry point.
 
 Four task modules register with the Workflows runtime:
-  - plan: breaks a question into subtopics (raw Anthropic SDK)
-  - research_agent: runs a LangGraph ReAct agent per subtopic (LangGraph + Exa)
-  - synthesize: merges findings into a report (raw Anthropic SDK)
+  - plan: breaks a question into subtopics
+  - research_agent: runs a LangGraph ReAct agent per subtopic (Exa tools)
+  - synthesize: merges findings into a report
   - research: orchestrator that chains the above three
 
+All Claude calls go through the shared ChatAnthropic model in tasks/llm.py.
 Each module defines its own per-task compute plan, timeout, and retry strategy.
-No defaults are set here: all config is explicit in each task file.
 """
 
 from render_sdk import Workflows

@@ -1,16 +1,16 @@
 """
 Synthesize task: merges all research agent findings into a structured report.
 
-Uses the raw Anthropic SDK (via tasks/llm.py) because this is a single-turn
-Claude call: no tools, no agent loop. The input is deterministic (all findings
-are already computed by the LangGraph agents).
+Single-turn Claude call via the shared ChatAnthropic model (tasks/llm.py).
+The input is deterministic (all findings are already computed by the research
+agents).
 
 Workflow config rationale:
-  - plan: standard (1 CPU, 2 GB) — the heaviest Claude call; the prompt
+  - plan: standard (1 CPU, 2 GB): the heaviest Claude call; the prompt
     contains every agent's findings concatenated together.
-  - timeout: 90s — synthesis over 3-5 subtopic findings can take 30-40s
+  - timeout: 90s: synthesis over 3 subtopic findings can take 30-40s
     from Claude; 90s covers worst-case latency.
-  - retry: 1 retry, 3s wait — input is deterministic, so a retry produces
+  - retry: 1 retry, 3s wait: input is deterministic, so a retry produces
     the same result. One retry handles transient Claude errors.
 """
 

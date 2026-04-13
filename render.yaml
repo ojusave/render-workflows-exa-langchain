@@ -18,5 +18,15 @@ services:
         description: "The slug of the workflow service (defaults to research-agent-workflow)"
         required: false
         sync: false
+      - key: LANGCHAIN_API_KEY
+        displayName: LangSmith API Key
+        description: "Optional: enables tracing and feedback via LangSmith"
+        required: false
+        sensitive: true
+        sync: false
+      - key: LANGCHAIN_TRACING_V2
+        value: "true"
+      - key: LANGCHAIN_PROJECT
+        value: "research-agent"
       - key: PYTHON_VERSION
         value: "3.12.3"
