@@ -8,7 +8,7 @@ A deep research agent where three tools each do what they're best at:
 - **[Render Workflows](https://render.com/workflows)** provides durable orchestration: parallel research agents on isolated compute with automatic retries, per-task timeouts, and full observability in the Dashboard.
 - **[Exa](https://exa.ai/)** provides AI-native semantic search as LangGraph tools: the agent queries with natural language and gets meaning-matched results, not SEO-optimized links.
 
-Ask a question. The agent breaks it into subtopics, dispatches a LangGraph research agent per subtopic in parallel, and synthesizes a structured report with sources.
+Ask a question. The agent breaks it into 3 focused subtopics, dispatches a LangGraph research agent per subtopic in parallel, and synthesizes a structured report with sources. The UI streams live progress with a step indicator and elapsed timer.
 
 ---
 
@@ -30,7 +30,7 @@ That's 4 searches. A different question might need 2 or 7. **LangGraph's ReAct l
 
 ### Why Render Workflows (not one long function)
 
-When you run 3-5 LangGraph agents in parallel, each making multiple Claude + Exa calls:
+When you run 3 LangGraph agents in parallel, each making multiple Claude + Exa calls:
 
 - **A single Exa 503 shouldn't kill the whole pipeline.** Each agent task has its own retry config (3s base, 2x backoff). Other agents are unaffected.
 - **A slow agent shouldn't block your web server.** Each agent runs on its own compute instance. The web server starts one task and returns immediately.
@@ -96,8 +96,8 @@ Each `await` dispatches a separate Workflow task on its own compute instance.
 
 | Step | Tool | What happens | Config |
 |---|---|---|---|
-| **Plan** | Anthropic SDK | Single Claude call: break question into subtopics with success criteria | starter, 45s, 2 retries |
-| **Research** (per subtopic) | LangGraph + Exa | ReAct agent loop: Claude calls `exa_search` / `exa_find_similar` until it has enough evidence. Non-deterministic: 2-8 searches per subtopic. | standard, 120s, 2 retries |
+| **Plan** | Anthropic SDK | Single Claude call: break question into 3 focused subtopics with success criteria | starter, 45s, 2 retries |
+| **Research** (per subtopic) | LangGraph + Exa | ReAct agent loop: Claude calls `exa_search` / `exa_find_similar` until it has 2-3 good sources. Typically 1-2 searches per subtopic. | standard, 120s, 2 retries |
 | **Synthesize** | Anthropic SDK | Single Claude call: merge all findings into a structured report | standard, 90s, 1 retry |
 | **Orchestrate** | Render Workflows | Chain the above, fan out research agents in parallel | starter, 600s, 1 retry |
 
@@ -115,29 +115,33 @@ sequenceDiagram
 
     Browser->>Web: POST /research
     Web->>WF: start_task("research")
-    Web-->>Browser: SSE: "Researching..."
+    Web-->>Browser: SSE: "Planning research approach…"
 
     Note over WF: research orchestrator task
     WF->>WF: plan_research (Anthropic SDK)
 
+    loop Every 4s: poll get_task_run()
+        Web-->>Browser: SSE: phase + elapsed time
+    end
+
     par Parallel LangGraph agents
         Note over WF: research_subtopic 1
-        WF->>WF: Claude -> exa_search -> Claude -> exa_search -> findings
+        WF->>WF: Claude -> exa_search -> findings
         Note over WF: research_subtopic 2
-        WF->>WF: Claude -> exa_search -> exa_find_similar -> findings
+        WF->>WF: Claude -> exa_search -> findings
         Note over WF: research_subtopic 3
         WF->>WF: Claude -> exa_search -> findings
     end
 
     WF->>WF: synthesize (Anthropic SDK)
-    WF-->>Web: report
+    Web->>WF: get_task_run() → completed
     Web-->>Browser: SSE: done + report
 ```
 
 Two Render services:
 
-- **Web service** (`research-agent`): thin FastAPI layer. Serves the UI, starts the orchestrator task, streams the result via SSE. Does no research work.
-- **Workflow service** (`research-agent-workflow`): four tasks. The `research` orchestrator chains `plan_research`, parallel `research_subtopic` agents, and `synthesize`. Each task run gets its own compute instance.
+- **Web service** (`research-agent`): thin FastAPI layer. Serves the UI, starts the orchestrator task, polls for completion every 4 seconds, and streams live progress + the final report via SSE. Does no research work.
+- **Workflow service** (`research-agent-workflow`): four tasks. The `research` orchestrator chains `plan_research`, 3 parallel `research_subtopic` agents, and `synthesize`. Each task run gets its own compute instance.
 
 ---
 
@@ -147,11 +151,11 @@ When a research job runs, the Render Dashboard shows:
 
 ```
 research (orchestrator)                    starter  600s
-├── plan_research                          starter   45s   ✓ 2.1s
-├── research_subtopic "quantum hardware"   standard 120s   ✓ 34s (5 searches)
-├── research_subtopic "error correction"   standard 120s   ✗→✓ retry 1: 28s
-├── research_subtopic "quantum software"   standard 120s   ✓ 22s (3 searches)
-└── synthesize                             standard  90s   ✓ 12s
+├── plan_research                          starter   45s   ✓ 12s
+├── research_subtopic "quantum hardware"   standard 120s   ✓ 25s (1 search)
+├── research_subtopic "error correction"   standard 120s   ✗→✓ retry 1: 20s
+├── research_subtopic "quantum software"   standard 120s   ✓ 18s (1 search)
+└── synthesize                             standard  90s   ✓ 30s
 ```
 
 Every task run shows inputs, outputs, duration, retry history, and error messages. You can see exactly which subtopic's agent failed, what it searched, and why.
@@ -215,7 +219,7 @@ Don't have a Render account? [Sign up here](https://render.com/register).
 ├── main.py                      # FastAPI web service (thin HTTP layer)
 ├── pipeline/
 │   ├── __init__.py              # Exports run_pipeline
-│   └── orchestrator.py          # Starts workflow task, streams SSE
+│   └── orchestrator.py          # Starts workflow task, polls progress, streams SSE
 ├── tasks/
 │   ├── __init__.py              # Combines task apps into one entry point
 │   ├── __main__.py              # Workflow service entry point (python -m tasks)
@@ -251,13 +255,22 @@ SSE events:
 
 ```
 event: status
-data: {"message": "Starting research..."}
+data: {"message": "Starting research…", "elapsed": 0}
 
 event: status
-data: {"message": "Researching...", "task_run_id": "tr-abc123"}
+data: {"message": "Planning research approach…", "task_run_id": "trn-abc123", "elapsed": 0}
+
+event: status
+data: {"message": "Searching for sources…", "elapsed": 12}
+
+event: status
+data: {"message": "Analyzing findings…", "elapsed": 28}
+
+event: status
+data: {"message": "Synthesizing final report…", "elapsed": 52}
 
 event: done
-data: {"report": {"title": "...", "summary": "...", "sections": [...], "sources": [...]}}
+data: {"report": {"title": "...", "summary": "...", "sections": [...], "sources": [...]}, "elapsed": 68}
 ```
 
 ### `GET /health`
