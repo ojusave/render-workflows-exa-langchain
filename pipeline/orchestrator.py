@@ -18,6 +18,7 @@ import time
 
 from render_sdk import RenderAsync
 from .tracking import start_run, complete_run, fail_run
+from .history import save_research
 
 WORKFLOW_SLUG = os.environ.get("WORKFLOW_SLUG", "research-agent-workflow")
 POLL_INTERVAL = 4
@@ -168,6 +169,7 @@ async def run_pipeline(question: str):
 
         if report:
             complete_run(run_id, report)
+            await save_research(question, report, run_id)
             yield sse("done", {
                 "report": report,
                 "run_id": run_id,

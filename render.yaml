@@ -28,5 +28,11 @@ services:
         value: "true"
       - key: LANGCHAIN_PROJECT
         value: "research-agent"
+      - key: DATABASE_URL
+        displayName: PostgreSQL Connection URL
+        description: "Optional: enables research history sidebar. Create a Render PostgreSQL database and use its Internal URL."
+        required: false
+        sensitive: true
+        sync: false
       - key: PYTHON_VERSION
         value: "3.12.3"

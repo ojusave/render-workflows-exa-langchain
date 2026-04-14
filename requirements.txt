@@ -10,5 +10,8 @@ langchain-exa>=0.2.0
 # Workflow orchestration
 render_sdk>=0.6.0
 
+# History: PostgreSQL storage (optional, env-driven)
+asyncpg>=0.30.0
+
 # Observability: LangSmith tracing + feedback (optional, env-driven)
 langsmith>=0.3.0

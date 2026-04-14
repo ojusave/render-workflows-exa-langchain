@@ -19,6 +19,7 @@
       --render-purple-hover: #5a52d5;
       --green: #22c55e;
       --red: #ef4444;
+      --sidebar-width: 240px;
     }
 
     html.light {
@@ -113,6 +114,129 @@
     .header-btn.primary:hover { background: var(--render-purple-hover); }
     .header-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
 
+    /* --- Layout: sidebar + content --- */
+    .layout {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* --- Sidebar --- */
+    #sidebar {
+      width: var(--sidebar-width);
+      flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 0.625rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-new-btn {
+      width: 100%;
+      padding: 0.5rem 0.625rem;
+      background: var(--overlay-subtle);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.75rem;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+    .sidebar-new-btn:hover { background: var(--overlay-strong); }
+    .sidebar-new-btn svg { width: 14px; height: 14px; }
+
+    #history-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.375rem;
+    }
+
+    .sidebar-empty {
+      padding: 1rem 0.625rem;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      text-align: center;
+    }
+
+    .history-item {
+      padding: 0.5rem 0.625rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.375rem;
+      position: relative;
+      border: 1px solid transparent;
+      margin-bottom: 1px;
+    }
+
+    .history-item:hover {
+      background: var(--overlay-subtle);
+      border-color: var(--border);
+    }
+
+    .history-item.active {
+      background: var(--overlay-medium);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .history-item .hi-text {
+      flex: 1;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-height: 1.4;
+    }
+
+    .history-item .hi-time {
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .history-item .hi-delete {
+      position: absolute;
+      top: 0.35rem;
+      right: 0.35rem;
+      width: 18px; height: 18px;
+      background: var(--overlay-medium);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 0.65rem;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .history-item:hover .hi-delete { display: flex; }
+    .history-item .hi-delete:hover { color: var(--red); border-color: var(--red); }
+
+    /* --- Content wrapper --- */
+    .content-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+
     /* --- Main content --- */
     #main {
       flex: 1;
@@ -173,11 +297,7 @@
       margin-top: 0.2rem;
     }
 
-    .activity-feed {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
+    .activity-feed { display: flex; flex-direction: column; gap: 0; }
 
     .activity-item {
       display: flex;
@@ -192,9 +312,7 @@
       margin-left: 3px;
     }
 
-    .activity-item:last-child {
-      border-left-color: transparent;
-    }
+    .activity-item:last-child { border-left-color: transparent; }
 
     .activity-item .indicator {
       width: 10px; height: 10px;
@@ -212,31 +330,12 @@
       animation: pulse 1.5s ease-in-out infinite;
     }
 
-    .activity-item.done .indicator {
-      background: var(--green);
-    }
-
-    .activity-item.error .indicator {
-      background: var(--red);
-    }
-
-    .activity-item .label {
-      flex: 1;
-      line-height: 1.5;
-    }
-
-    .activity-item .label strong {
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .activity-item.done .label {
-      color: var(--text-dim);
-    }
-
-    .activity-item.active .label {
-      color: var(--text);
-    }
+    .activity-item.done .indicator { background: var(--green); }
+    .activity-item.error .indicator { background: var(--red); }
+    .activity-item .label { flex: 1; line-height: 1.5; }
+    .activity-item .label strong { color: var(--text); font-weight: 600; }
+    .activity-item.done .label { color: var(--text-dim); }
+    .activity-item.active .label { color: var(--text); }
 
     .activity-item .elapsed {
       font-size: 0.7rem;
@@ -246,12 +345,7 @@
       margin-top: 0.15rem;
     }
 
-    .subtopic-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.375rem;
-      margin-top: 0.375rem;
-    }
+    .subtopic-list { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-top: 0.375rem; }
 
     .subtopic-tag {
       font-size: 0.7rem;
@@ -261,16 +355,7 @@
       color: var(--text-muted);
     }
 
-    .agent-row {
-      margin-left: 0.25rem;
-    }
-
-
-    .activity-error {
-      color: var(--red);
-      font-size: 0.8rem;
-      margin-top: 0.75rem;
-    }
+    .activity-error { color: var(--red); font-size: 0.8rem; margin-top: 0.75rem; }
 
     .dashboard-link {
       display: inline-flex;
@@ -306,127 +391,42 @@
       animation: fadeUp 0.3s ease-out;
     }
 
-    #report h2 {
-      font-size: 1.3rem;
-      color: var(--text-strong);
-      margin-bottom: 0.75rem;
-      font-weight: 400;
-    }
+    #report h2 { font-size: 1.3rem; color: var(--text-strong); margin-bottom: 0.75rem; font-weight: 400; }
 
     #report .report-summary {
-      font-size: 0.9rem;
-      line-height: 1.7;
-      color: var(--text-muted);
-      padding-bottom: 1rem;
-      margin-bottom: 1.25rem;
-      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem; line-height: 1.7; color: var(--text-muted);
+      padding-bottom: 1rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border);
     }
 
     #report .report-section { margin-bottom: 1.25rem; }
-
-    #report .report-section h3 {
-      font-size: 1rem;
-      color: var(--text);
-      font-weight: 500;
-      font-family: 'Inter', sans-serif;
-      margin-bottom: 0.5rem;
-    }
-
-    #report .report-section .content {
-      font-size: 0.85rem;
-      line-height: 1.7;
-      color: var(--text);
-    }
-
+    #report .report-section h3 { font-size: 1rem; color: var(--text); font-weight: 500; font-family: 'Inter', sans-serif; margin-bottom: 0.5rem; }
+    #report .report-section .content { font-size: 0.85rem; line-height: 1.7; color: var(--text); }
     #report .report-section .content p { margin: 0.4rem 0; }
     #report .report-section .content p:first-child { margin-top: 0; }
-    #report .report-section .content ul, #report .report-section .content ol {
-      margin: 0.4rem 0; padding-left: 1.25rem;
-    }
+    #report .report-section .content ul, #report .report-section .content ol { margin: 0.4rem 0; padding-left: 1.25rem; }
     #report .report-section .content li { margin: 0.15rem 0; }
     #report .report-section .content strong { color: var(--text-strong); font-weight: 600; }
-    #report .report-section .content code {
-      background: var(--code-bg);
-      padding: 0.1rem 0.35rem; font-size: 0.8rem;
-      font-family: "SF Mono", "Fira Code", monospace;
-    }
-    #report .report-section .content pre {
-      background: var(--code-bg); border: 1px solid var(--border);
-      padding: 0.625rem 0.75rem; margin: 0.5rem 0;
-      overflow-x: auto; font-size: 0.8rem;
-    }
+    #report .report-section .content code { background: var(--code-bg); padding: 0.1rem 0.35rem; font-size: 0.8rem; font-family: "SF Mono", "Fira Code", monospace; }
+    #report .report-section .content pre { background: var(--code-bg); border: 1px solid var(--border); padding: 0.625rem 0.75rem; margin: 0.5rem 0; overflow-x: auto; font-size: 0.8rem; }
     #report .report-section .content pre code { background: none; padding: 0; }
 
-    #report .report-sources {
-      margin-top: 1.5rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-    }
-
-    #report .report-sources h3 {
-      font-size: 0.8rem;
-      color: var(--text-dim);
-      font-weight: 600;
-      font-family: 'Inter', sans-serif;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 0.5rem;
-    }
-
+    #report .report-sources { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    #report .report-sources h3 { font-size: 0.8rem; color: var(--text-dim); font-weight: 600; font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.5rem; }
     #report .report-sources ul { list-style: none; padding: 0; }
-
-    #report .report-sources li {
-      font-size: 0.8rem;
-      padding: 0.35rem 0;
-      border-bottom: 1px solid var(--overlay-subtle);
-    }
-
+    #report .report-sources li { font-size: 0.8rem; padding: 0.35rem 0; border-bottom: 1px solid var(--overlay-subtle); }
     #report .report-sources li:last-child { border-bottom: none; }
     #report .report-sources a { font-weight: 500; }
-
-    #report .report-sources .source-url {
-      font-size: 0.7rem;
-      color: var(--text-dim);
-      display: block;
-      margin-top: 0.1rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+    #report .report-sources .source-url { font-size: 0.7rem; color: var(--text-dim); display: block; margin-top: 0.1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     /* --- Feedback --- */
-    .feedback-bar {
-      margin-top: 1.5rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
+    .feedback-bar { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 0.75rem; }
     .feedback-bar span { font-size: 0.75rem; color: var(--text-dim); }
-
-    .feedback-btn {
-      width: 32px; height: 32px;
-      display: inline-flex; align-items: center; justify-content: center;
-      background: var(--overlay-subtle);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.15s;
-      border-radius: 0;
-    }
-
+    .feedback-btn { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; background: var(--overlay-subtle); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; transition: all 0.15s; border-radius: 0; }
     .feedback-btn:hover { background: var(--overlay-strong); color: var(--text); }
     .feedback-btn.selected { border-color: var(--render-purple); color: var(--render-purple); background: rgba(108,99,255,0.1); }
     .feedback-btn:disabled { opacity: 0.5; cursor: default; }
     .feedback-btn svg { width: 16px; height: 16px; }
-
-    .feedback-thanks {
-      font-size: 0.75rem;
-      color: var(--green);
-      animation: fadeUp 0.2s ease-out;
-    }
+    .feedback-thanks { font-size: 0.75rem; color: var(--green); animation: fadeUp 0.2s ease-out; }
 
     /* --- Form --- */
     form {
@@ -477,8 +477,8 @@
     footer .sep { color: var(--sep); }
 
     /* --- Scrollbar --- */
-    #main::-webkit-scrollbar { width: 4px; }
-    #main::-webkit-scrollbar-thumb { background: var(--overlay-strong); }
+    #main::-webkit-scrollbar, #history-list::-webkit-scrollbar { width: 4px; }
+    #main::-webkit-scrollbar-thumb, #history-list::-webkit-scrollbar-thumb { background: var(--overlay-strong); }
 
     /* --- Animations --- */
     @keyframes fadeUp {
@@ -492,7 +492,26 @@
     }
 
     /* --- Mobile --- */
+    #sidebar-toggle { display: none; }
+
     @media (max-width: 600px) {
+      #sidebar {
+        position: fixed;
+        top: 0; left: 0; bottom: 0;
+        z-index: 20;
+        transform: translateX(-100%);
+        transition: transform 0.2s ease;
+      }
+      #sidebar.open { transform: translateX(0); }
+      #sidebar-toggle { display: inline-flex; }
+      #sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 15;
+      }
+      #sidebar-overlay.open { display: block; }
       #main { padding: 1.5rem 0.75rem; }
       form { padding: 0.625rem 0.75rem 0.875rem; }
       header { flex-wrap: wrap; gap: 0.5rem; }
@@ -506,18 +525,18 @@
 </head>
 <body>
   <header>
+    <button id="sidebar-toggle" class="header-btn" title="History">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
     <div class="title-group">
       <div class="dot"></div>
       <h1>Research Agent</h1>
-      <span class="tag">Render Workflows + Exa + Claude</span>
+      <span class="tag">Built on Render</span>
     </div>
     <div class="actions">
-      <a id="github-btn" href="" target="_blank" rel="noopener" class="header-btn">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-        <span class="btn-label">GitHub</span>
-      </a>
-      <a id="deploy-btn" href="" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;">
-        <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render" height="24" />
+      <a id="deploy-btn" href="" target="_blank" rel="noopener" class="header-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+        <span class="btn-label">Deploy to Render</span>
       </a>
       <a id="signup-btn" href="" target="_blank" rel="noopener" class="header-btn primary">
         <span class="btn-label">Sign up on Render</span>
@@ -529,40 +548,57 @@
     </div>
   </header>
 
-  <div id="main">
-    <div class="welcome" id="welcome">
-      <h2>Research anything</h2>
-      <p>Ask a question. The agent plans search queries, fans out parallel web searches via Exa, analyzes each result set with Claude, and synthesizes a report: all as chained <a href="https://render.com/workflows" target="_blank" rel="noopener">Render Workflow</a> tasks.</p>
-      <div class="examples">
-        <button type="button" onclick="sendExample(this)">What are the latest advances in quantum computing?</button>
-        <button type="button" onclick="sendExample(this)">How does mRNA vaccine technology work?</button>
-        <button type="button" onclick="sendExample(this)">What is the state of fusion energy in 2026?</button>
+  <div class="layout">
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <button class="sidebar-new-btn" onclick="startNewResearch()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New research
+        </button>
       </div>
-    </div>
-
-    <div id="activity">
-      <div class="activity-question">
-        <span class="activity-timer" id="activity-timer">0:00</span>
-        <span id="activity-question-text"></span>
+      <div id="history-list">
+        <div class="sidebar-empty">No history yet</div>
       </div>
-      <div class="activity-feed" id="activity-feed"></div>
-      <a href="https://dashboard.render.com/" target="_blank" rel="noopener" class="dashboard-link">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        Watch tasks in the Render Dashboard
-      </a>
-      <div class="activity-error" id="activity-error"></div>
-    </div>
+    </aside>
+    <div id="sidebar-overlay"></div>
 
-    <div id="report"></div>
+    <div class="content-wrapper">
+      <div id="main">
+        <div class="welcome" id="welcome">
+          <h2>Research anything</h2>
+          <p>Ask a question. The agent breaks it into subtopics, runs parallel searches, and synthesizes a structured report: powered by <a href="https://render.com/workflows" target="_blank" rel="noopener">Render Workflows</a>.</p>
+          <div class="examples">
+            <button type="button" onclick="sendExample(this)">What are the latest advances in quantum computing?</button>
+            <button type="button" onclick="sendExample(this)">How does mRNA vaccine technology work?</button>
+            <button type="button" onclick="sendExample(this)">What is the state of fusion energy in 2026?</button>
+          </div>
+        </div>
+
+        <div id="activity">
+          <div class="activity-question">
+            <span class="activity-timer" id="activity-timer">0:00</span>
+            <span id="activity-question-text"></span>
+          </div>
+          <div class="activity-feed" id="activity-feed"></div>
+          <a href="https://dashboard.render.com/" target="_blank" rel="noopener" class="dashboard-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Watch tasks in the Render Dashboard
+          </a>
+          <div class="activity-error" id="activity-error"></div>
+        </div>
+
+        <div id="report"></div>
+      </div>
+
+      <form id="form">
+        <input id="input" type="text" placeholder="What do you want to research?" autocomplete="off" />
+        <button type="submit">
+          Research
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+      </form>
+    </div>
   </div>
-
-  <form id="form">
-    <input id="input" type="text" placeholder="What do you want to research?" autocomplete="off" />
-    <button type="submit">
-      Research
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    </button>
-  </form>
 
   <footer>
     <span>Built with</span>
@@ -573,6 +609,8 @@
     <a href="https://www.anthropic.com/" target="_blank" rel="noopener">Claude</a>
     <span class="sep">&middot;</span>
     <a href="https://render.com/" target="_blank" rel="noopener">Render</a>
+    <span class="sep">&middot;</span>
+    <a id="github-link" href="" target="_blank" rel="noopener">GitHub</a>
   </footer>
 
   <script>
@@ -609,7 +647,7 @@
 
     document.getElementById("signup-btn").href = renderSignupUrlWithUtms("navbar_button");
     document.getElementById("deploy-btn").href = `https://render.com/deploy?repo=${encodeURIComponent(GITHUB_REPO)}`;
-    document.getElementById("github-btn").href = GITHUB_REPO;
+    document.getElementById("github-link").href = GITHUB_REPO;
     document.getElementById("theme-toggle").addEventListener("click", toggleTheme);
     updateThemeIcons(document.documentElement.classList.contains("dark") ? "dark" : "light");
 
@@ -626,10 +664,119 @@
     const activityQuestionText = document.getElementById("activity-question-text");
     const activityError = document.getElementById("activity-error");
     const reportEl = document.getElementById("report");
+    const sidebar = document.getElementById("sidebar");
+    const historyList = document.getElementById("history-list");
+    const sidebarOverlay = document.getElementById("sidebar-overlay");
 
     let timerInterval = null;
     let startTime = 0;
     let currentRunId = null;
+    let currentQuestion = "";
+    let activeHistoryId = null;
+
+    // -----------------------------------------------------------------------
+    // Sidebar: mobile toggle
+    // -----------------------------------------------------------------------
+    document.getElementById("sidebar-toggle").addEventListener("click", () => {
+      sidebar.classList.toggle("open");
+      sidebarOverlay.classList.toggle("open");
+    });
+    sidebarOverlay.addEventListener("click", () => {
+      sidebar.classList.remove("open");
+      sidebarOverlay.classList.remove("open");
+    });
+
+    // -----------------------------------------------------------------------
+    // Sidebar: history
+    // -----------------------------------------------------------------------
+    function formatRelativeTime(isoString) {
+      const diff = Date.now() - new Date(isoString).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return "now";
+      if (mins < 60) return `${mins}m`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `${hours}h`;
+      const days = Math.floor(hours / 24);
+      return `${days}d`;
+    }
+
+    async function loadHistory() {
+      try {
+        const res = await fetch("/history");
+        const entries = await res.json();
+        if (!Array.isArray(entries) || entries.length === 0) {
+          historyList.innerHTML = '<div class="sidebar-empty">No history yet</div>';
+          return;
+        }
+        historyList.innerHTML = "";
+        for (const entry of entries) {
+          const item = document.createElement("div");
+          item.className = "history-item" + (entry.id === activeHistoryId ? " active" : "");
+          item.dataset.id = entry.id;
+          item.innerHTML =
+            `<span class="hi-text">${escapeHtml(entry.question)}</span>` +
+            `<span class="hi-time">${formatRelativeTime(entry.created_at)}</span>` +
+            `<button class="hi-delete" onclick="event.stopPropagation(); deleteHistoryEntry('${entry.id}')" title="Delete">&times;</button>`;
+          item.addEventListener("click", () => showHistoryEntry(entry.id));
+          historyList.appendChild(item);
+        }
+      } catch (e) {
+        historyList.innerHTML = '<div class="sidebar-empty">No history yet</div>';
+      }
+    }
+
+    async function showHistoryEntry(entryId) {
+      try {
+        const res = await fetch(`/history/${entryId}`);
+        if (!res.ok) return;
+        const entry = await res.json();
+
+        activeHistoryId = entryId;
+        currentRunId = entry.run_id || null;
+
+        welcome.style.display = "none";
+        activity.style.display = "none";
+        reportEl.style.display = "none";
+        reportEl.innerHTML = "";
+        stopTimer();
+
+        renderReport(entry.report);
+
+        document.querySelectorAll(".history-item").forEach(el => {
+          el.classList.toggle("active", el.dataset.id === entryId);
+        });
+
+        sidebar.classList.remove("open");
+        sidebarOverlay.classList.remove("open");
+      } catch (e) {}
+    }
+
+    async function deleteHistoryEntry(entryId) {
+      try {
+        await fetch(`/history/${entryId}`, { method: "DELETE" });
+      } catch (e) {}
+      if (activeHistoryId === entryId) {
+        activeHistoryId = null;
+        startNewResearch();
+      }
+      loadHistory();
+    }
+
+    function startNewResearch() {
+      activeHistoryId = null;
+      stopTimer();
+      activity.style.display = "none";
+      reportEl.style.display = "none";
+      reportEl.innerHTML = "";
+      welcome.style.display = "";
+
+      document.querySelectorAll(".history-item").forEach(el => el.classList.remove("active"));
+
+      sidebar.classList.remove("open");
+      sidebarOverlay.classList.remove("open");
+
+      inputEl.focus();
+    }
 
     // -----------------------------------------------------------------------
     // Timer
@@ -677,7 +824,7 @@
     }
 
     // -----------------------------------------------------------------------
-    // SSE event handlers (one per event type)
+    // SSE event handlers
     // -----------------------------------------------------------------------
     let planningItem = null;
     let agentItems = {};
@@ -700,23 +847,14 @@
 
     function handlePlan(data) {
       if (planningItem) markItemDone(planningItem);
-
       const subtopics = data.subtopics || [];
       let tagsHtml = '<div class="subtopic-list">';
       for (const st of subtopics) {
         tagsHtml += `<span class="subtopic-tag">${escapeHtml(st)}</span>`;
       }
       tagsHtml += '</div>';
-
-      addActivityItem(
-        `<strong>Claude</strong> planned ${subtopics.length} subtopics` + tagsHtml,
-        "done"
-      );
-
-      addActivityItem(
-        `<strong>Render Workflows</strong> launched ${subtopics.length} parallel agents`,
-        "done"
-      );
+      addActivityItem(`<strong>Claude</strong> planned ${subtopics.length} subtopics` + tagsHtml, "done");
+      addActivityItem(`<strong>Render Workflows</strong> launched ${subtopics.length} parallel agents`, "done");
     }
 
     function handleAgentStart(data) {
@@ -730,14 +868,12 @@
     function handleAgentDone(data) {
       const entry = agentItems[data.index];
       if (!entry) return;
-
       markItemDone(entry.item);
       const elapsed = Math.round((Date.now() - entry.startTime) / 1000);
       const elapsedSpan = document.createElement("span");
       elapsedSpan.className = "elapsed";
       elapsedSpan.textContent = `${elapsed}s`;
       entry.item.appendChild(elapsedSpan);
-
       entry.item.querySelector(".label").innerHTML =
         `<strong>LangGraph</strong> agent finished: ${escapeHtml(data.subtopic)}`;
     }
@@ -746,17 +882,13 @@
       if (synthesizingItem) markItemDone(synthesizingItem);
       stopTimer();
       currentRunId = data.run_id || null;
-
       const langsmithTools = data.tools || [];
       if (langsmithTools.includes("LangSmith")) {
-        addActivityItem(
-          "<strong>LangSmith</strong> traced all calls in this pipeline",
-          "done"
-        );
+        addActivityItem("<strong>LangSmith</strong> traced all calls in this pipeline", "done");
       }
-
       setTimeout(() => {
         renderReport(data.report);
+        loadHistory();
       }, 300);
     }
 
@@ -779,36 +911,24 @@
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
-
-      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) =>
-        `<pre><code>${code.trim()}</code></pre>`
-      );
+      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => `<pre><code>${code.trim()}</code></pre>`);
       html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
       html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
       html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-
       const lines = html.split("\n");
       const blocks = [];
       let listBuffer = [];
       let inList = false;
-
       for (const line of lines) {
         const listMatch = line.match(/^[\s]*[-•]\s+(.*)/);
         if (listMatch) {
           inList = true;
           listBuffer.push(`<li>${listMatch[1]}</li>`);
         } else {
-          if (inList) {
-            blocks.push(`<ul>${listBuffer.join("")}</ul>`);
-            listBuffer = [];
-            inList = false;
-          }
+          if (inList) { blocks.push(`<ul>${listBuffer.join("")}</ul>`); listBuffer = []; inList = false; }
           const trimmed = line.trim();
-          if (trimmed.startsWith("<pre>")) {
-            blocks.push(trimmed);
-          } else if (trimmed) {
-            blocks.push(`<p>${trimmed}</p>`);
-          }
+          if (trimmed.startsWith("<pre>")) blocks.push(trimmed);
+          else if (trimmed) blocks.push(`<p>${trimmed}</p>`);
         }
       }
       if (inList) blocks.push(`<ul>${listBuffer.join("")}</ul>`);
@@ -825,7 +945,6 @@
       let html = "";
       if (data.title) html += `<h2>${escapeHtml(data.title)}</h2>`;
       if (data.summary) html += `<div class="report-summary">${escapeHtml(data.summary)}</div>`;
-
       if (data.sections) {
         for (const section of data.sections) {
           html += `<div class="report-section">`;
@@ -834,7 +953,6 @@
           html += `</div>`;
         }
       }
-
       if (data.sources && data.sources.length > 0) {
         html += `<div class="report-sources"><h3>Sources</h3><ul>`;
         for (const src of data.sources) {
@@ -846,19 +964,13 @@
         }
         html += `</ul></div>`;
       }
-
       if (currentRunId) {
         html += `<div class="feedback-bar" id="feedback-bar">`;
         html += `<span>Was this helpful?</span>`;
-        html += `<button class="feedback-btn" onclick="sendFeedback(1, this)" title="Helpful">`;
-        html += `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>`;
-        html += `</button>`;
-        html += `<button class="feedback-btn" onclick="sendFeedback(0, this)" title="Not helpful">`;
-        html += `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0122 4v7a2.31 2.31 0 01-2.33 2H17"/></svg>`;
-        html += `</button>`;
+        html += `<button class="feedback-btn" onclick="sendFeedback(1, this)" title="Helpful"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg></button>`;
+        html += `<button class="feedback-btn" onclick="sendFeedback(0, this)" title="Not helpful"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0122 4v7a2.31 2.31 0 01-2.33 2H17"/></svg></button>`;
         html += `</div>`;
       }
-
       reportEl.innerHTML = html;
       reportEl.style.display = "block";
       mainEl.scrollTop = mainEl.scrollHeight;
@@ -871,21 +983,11 @@
       if (!currentRunId) return;
       const bar = document.getElementById("feedback-bar");
       if (!bar) return;
-
-      bar.querySelectorAll(".feedback-btn").forEach(b => {
-        b.disabled = true;
-        b.classList.remove("selected");
-      });
+      bar.querySelectorAll(".feedback-btn").forEach(b => { b.disabled = true; b.classList.remove("selected"); });
       btn.classList.add("selected");
-
       try {
-        await fetch("/feedback", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ run_id: currentRunId, score }),
-        });
+        await fetch("/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ run_id: currentRunId, score }) });
       } catch (e) {}
-
       const thanks = document.createElement("span");
       thanks.className = "feedback-thanks";
       thanks.textContent = "Thanks for your feedback";
@@ -906,9 +1008,7 @@
           if (line.startsWith("event: ")) event = line.slice(7);
           else if (line.startsWith("data: ")) data = line.slice(6);
         }
-        if (data) {
-          try { events.push({ event, data: JSON.parse(data) }); } catch (e) {}
-        }
+        if (data) { try { events.push({ event, data: JSON.parse(data) }); } catch (e) {} }
       }
       return { events, remainder: remainder || "" };
     }
@@ -917,6 +1017,7 @@
     // UI state transitions
     // -----------------------------------------------------------------------
     function showActivity(question) {
+      activeHistoryId = null;
       welcome.style.display = "none";
       activity.style.display = "block";
       reportEl.style.display = "none";
@@ -925,9 +1026,11 @@
       activityError.textContent = "";
       activityQuestionText.textContent = question;
       currentRunId = null;
+      currentQuestion = question;
       planningItem = null;
       agentItems = {};
       synthesizingItem = null;
+      document.querySelectorAll(".history-item").forEach(el => el.classList.remove("active"));
       startTimer();
     }
 
@@ -943,32 +1046,25 @@
       e.preventDefault();
       const text = inputEl.value.trim();
       if (!text) return;
-
       inputEl.value = "";
       showActivity(text);
-
       const btn = form.querySelector("button[type='submit']");
       btn.disabled = true;
-
       try {
         const res = await fetch("/research", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ question: text }),
         });
-
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
-
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-
           buffer += decoder.decode(value, { stream: true });
           const { events, remainder } = parseSSE(buffer);
           buffer = remainder;
-
           for (const { event, data } of events) {
             if (event === "status") handleStatus(data);
             else if (event === "plan") handlePlan(data);
@@ -986,6 +1082,10 @@
       }
     });
 
+    // -----------------------------------------------------------------------
+    // Init
+    // -----------------------------------------------------------------------
+    loadHistory();
     inputEl.focus();
   </script>
 </body>

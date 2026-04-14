@@ -1,6 +1,6 @@
 # Research Agent
 
-A deep research tool that breaks any question into subtopics, runs parallel AI search agents, and synthesizes a structured report with sources.
+Powered by [Render Workflows](https://render.com/workflows). A deep research tool that breaks any question into subtopics, runs parallel AI search agents, and synthesizes a structured report with sources.
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ojusave/langchain-test)
 &nbsp;&nbsp;
@@ -19,6 +19,7 @@ A deep research tool that breaks any question into subtopics, runs parallel AI s
 - [Configuration](#configuration)
 - [Project Structure](#project-structure)
 - [API](#api)
+- [History (Optional)](#history-optional)
 - [LangSmith (Optional)](#langsmith-optional)
 - [Troubleshooting](#troubleshooting)
 
@@ -118,6 +119,7 @@ The web service discovers the workflow by its slug automatically.
 |---|---|---|---|
 | `RENDER_API_KEY` | Yes | — | Triggers workflow tasks |
 | `WORKFLOW_SLUG` | No | `research-agent-workflow` | Workflow service slug |
+| `DATABASE_URL` | No | — | Enables research history sidebar (Render PostgreSQL) |
 | `LANGCHAIN_API_KEY` | No | — | Enables LangSmith tracing + feedback |
 | `LANGCHAIN_TRACING_V2` | No | `true` | LangSmith tracing flag |
 | `LANGCHAIN_PROJECT` | No | `research-agent` | LangSmith project name |
@@ -143,6 +145,7 @@ The web service discovers the workflow by its slug automatically.
 ├── pipeline/
 │   ├── __init__.py          # Exports run_pipeline
 │   ├── orchestrator.py      # Dispatches workflow tasks, polls, streams SSE
+│   ├── history.py           # PostgreSQL research history (optional)
 │   ├── tracking.py          # LangSmith pipeline run lifecycle (optional)
 │   └── feedback.py          # POST /feedback: LangSmith user ratings (optional)
 ├── tasks/
@@ -203,9 +206,35 @@ Submits a thumbs up/down rating to LangSmith. No-ops if LangSmith is not configu
 { "run_id": "uuid-from-done-event", "score": 1, "comment": "Great report" }
 ```
 
+### `GET /history`
+
+Returns recent research history entries (newest first). Returns `[]` if no database is configured.
+
+### `GET /history/:id`
+
+Returns a single history entry with the full report.
+
+### `DELETE /history/:id`
+
+Deletes a history entry.
+
 ### `GET /health`
 
 Returns `{ "status": "ok" }`.
+
+---
+
+## History (Optional)
+
+Set `DATABASE_URL` on the web service to enable a sidebar with research history, similar to ChatGPT/Claude.
+
+1. Create a **PostgreSQL** database on the [Render Dashboard](https://dashboard.render.com)
+2. Copy the **Internal URL** and set it as `DATABASE_URL` on the web service
+3. The table is auto-created on first startup
+
+To disable: unset `DATABASE_URL`. The sidebar shows "No history yet" and all history functions no-op.
+
+To remove entirely: delete `pipeline/history.py` and the related imports in `main.py` and `pipeline/orchestrator.py`.
 
 ---
 
