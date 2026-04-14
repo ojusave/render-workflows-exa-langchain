@@ -1,12 +1,9 @@
 # Research Agent
 
-Powered by [Render Workflows](https://render.com/workflows). A deep research tool that breaks any question into subtopics, runs parallel AI search agents, and synthesizes a structured report with sources.
+ A deep research tool that breaks any question into subtopics, runs parallel AI search agents, and synthesizes a structured report with sources. Powered by [Render Workflows](https://render.com/workflows).
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ojusave/langchain-test)
 &nbsp;&nbsp;
-[Sign up on Render](https://render.com/register?utm_source=github&utm_medium=referral&utm_campaign=ojus_demos&utm_content=readme_link)
-&nbsp;&nbsp;
-[GitHub repo](https://github.com/ojusave/langchain-test)
 
 ---
 
