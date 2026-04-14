@@ -6,7 +6,7 @@ provides durable execution (retries, timeout, isolated compute). LangGraph
 provides the agentic loop (Claude decides what to search and when to stop).
 
 Each research_agent task runs in its own compute instance. When the
-orchestrator fans out 3 of these in parallel, each gets independent
+orchestrator fans out these in parallel, each gets independent
 retry and timeout handling. If one subtopic's agent hits a rate limit
 and retries, the others are unaffected.
 

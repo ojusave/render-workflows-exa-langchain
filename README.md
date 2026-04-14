@@ -26,8 +26,8 @@
 
 Ask a question. The agent:
 
-1. **Plans**: Claude breaks it into 3 focused subtopics with success criteria.
-2. **Researches**: 3 LangGraph agents run in parallel, each using Exa semantic search. Claude decides the search strategy at runtime: how many searches, when to refine, when to stop.
+1. **Plans**: Claude breaks it into focused subtopics with success criteria (as many as the question needs).
+2. **Researches**: LangGraph agents run in parallel (one per subtopic), each using Exa semantic search. Claude decides the search strategy at runtime: how many searches, when to refine, when to stop.
 3. **Synthesizes**: Claude merges all findings into a structured report with sections and sources.
 
 The UI streams live progress as an activity feed, showing which tool is doing what at each step.
@@ -35,7 +35,7 @@ The UI streams live progress as an activity feed, showing which tool is doing wh
 ```
 User question
   → plan_research (Claude)
-  → 3× research_subtopic (LangGraph + Exa, in parallel)
+  → N× research_subtopic (LangGraph + Exa, in parallel)
   → synthesize (Claude)
   → Structured report
 ```
@@ -56,7 +56,7 @@ User question
 
 **LangGraph**: a research question can't be answered with a fixed number of searches. The agent might search once and get great results, or search 5 times, refine queries, and use `find_similar` to discover related work. The ReAct loop lets Claude decide the search strategy at runtime.
 
-**Render Workflows**: 3 parallel agents each making multiple LLM + search calls need isolated compute, per-task retries, and observability. A single Exa 503 shouldn't kill the pipeline. A slow agent shouldn't block the web server. The Dashboard shows the full task tree: which subtopic failed, what it searched, how many retries it took.
+**Render Workflows**: parallel agents each making multiple LLM + search calls need isolated compute, per-task retries, and observability. A single Exa 503 shouldn't kill the pipeline. A slow agent shouldn't block the web server. The Dashboard shows the full task tree: which subtopic failed, what it searched, how many retries it took.
 
 **Exa**: the agent queries with natural language like "recent breakthroughs in quantum error correction". Exa returns meaning-matched results. `find_similar` enables discovery chains from good sources.
 

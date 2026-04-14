@@ -27,11 +27,13 @@ def plan_research(question: str) -> dict:
     """Break a research question into subtopics with success criteria."""
     raw = ask(
         system=(
-            "You are a research planner. Given a question, break it into exactly 3 subtopics "
-            "that a research agent should investigate separately. Keep subtopics focused "
-            "and non-overlapping. For each, define a concise success criterion.\n\n"
+            "You are a research planner. Given a question, break it into subtopics "
+            "that a research agent should investigate separately. Use as many subtopics "
+            "as the question needs: simple questions may only need one or two, broad or "
+            "multi-faceted questions may need several. Keep subtopics focused and "
+            "non-overlapping. For each, define a concise success criterion.\n\n"
             "Return ONLY a JSON object with:\n"
-            '- "subtopics": a list of exactly 3 objects, each with:\n'
+            '- "subtopics": a list of objects, each with:\n'
             '  - "topic": a concise subtopic description\n'
             '  - "criteria": what evidence the researcher should find (2-3 sources)\n'
             "No other text."
