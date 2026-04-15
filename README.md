@@ -1,280 +1,96 @@
 # Research Agent
 
- A deep research tool that breaks any question into subtopics, runs parallel AI search agents, and synthesizes a structured report with sources. Powered by [Render Workflows](https://render.com/workflows).
+A deep research tool that breaks any question into subtopics, runs parallel AI search agents, and synthesizes a structured report with sources. Powered by [Render Workflows](https://render.com/workflows).
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ojusave/langchain-test)
-&nbsp;&nbsp;
 
----
-
-## Table of Contents
-
-- [How It Works](#how-it-works)
-- [Why These Tools](#why-these-tools)
-- [Prerequisites](#prerequisites)
-- [Quick Start (Deploy)](#quick-start-deploy)
-- [Configuration](#configuration)
-- [Project Structure](#project-structure)
-- [API](#api)
-- [History (Optional)](#history-optional)
-- [LangSmith (Optional)](#langsmith-optional)
-- [Troubleshooting](#troubleshooting)
-
----
-
-## How It Works
+## How it works
 
 ![Architecture](static/images/architecture.png)
 
 ![Pipeline flow](static/images/pipeline.png)
 
-Non-research queries (greetings, simple questions, coding help) get a direct reply without triggering Exa searches. The UI streams live progress as an activity feed, showing which tool is doing what at each step.
-
-### What Each Layer Does
-
-| Layer | Tool | Role |
-|---|---|---|
-| **Agent loop** | [LangGraph](https://www.langchain.com/langgraph) | ReAct agent: Claude calls Exa tools, evaluates results, decides next step |
-| **Orchestration** | [Render Workflows](https://render.com/workflows) | Durable parallel execution, per-task retries, timeouts, observability |
-| **Search** | [Exa](https://exa.ai/) | AI-native semantic search: meaning-matched results, not SEO links |
-| **LLM** | [ChatAnthropic](https://python.langchain.com/docs/integrations/chat/anthropic/) | All Claude calls go through one shared model instance |
-| **Tracing** | [LangSmith](https://smith.langchain.com/) | Optional: auto-traces every LLM call, collects user feedback |
-
----
-
-## Why These Tools
-
-**LangGraph**: a research question can't be answered with a fixed number of searches. The agent might search once and get great results, or search 5 times, refine queries, and use `find_similar` to discover related work. The ReAct loop lets Claude decide the search strategy at runtime.
-
-**Render Workflows**: parallel agents each making multiple LLM + search calls need isolated compute, per-task retries, and observability. A single Exa 503 shouldn't kill the pipeline. A slow agent shouldn't block the web server. The Dashboard shows the full task tree: which subtopic failed, what it searched, how many retries it took.
-
-**Exa**: the agent queries with natural language like "recent breakthroughs in quantum error correction". Exa returns meaning-matched results. `find_similar` enables discovery chains from good sources.
-
----
+Non-research queries (greetings, coding help, simple questions) get a direct reply without triggering search. The UI streams live progress as an activity feed.
 
 ## Prerequisites
 
 - A [Render account](https://render.com/register?utm_source=github&utm_medium=referral&utm_campaign=ojus_demos&utm_content=readme_link)
-- API keys for: [Render](https://render.com/docs/api#1-create-an-api-key), [Anthropic](https://console.anthropic.com/), [Exa](https://exa.ai/)
-- Optional: [LangSmith](https://smith.langchain.com/) API key for tracing
+- API keys: [Render](https://render.com/docs/api#1-create-an-api-key), [Anthropic](https://console.anthropic.com/), [Exa](https://exa.ai/)
+- Optional: [LangSmith](https://smith.langchain.com/) key for tracing and feedback
 
----
+## Deploy
 
-## Quick Start (Deploy)
+### 1. Web service (via Blueprint)
 
-This app runs as two Render services: a **web service** and a **workflow service**.
+Click **Deploy to Render** above. Set `RENDER_API_KEY` during setup.
 
-### 1. Deploy the web service
+### 2. Workflow service (manual)
 
-Click **Deploy to Render** above. Set:
+1. [Render Dashboard](https://dashboard.render.com) > **New** > **Workflow**
+2. Connect the same repo
+3. Build: `pip install -r requirements.txt`
+4. Start: `python -m tasks`
+5. Name: `research-agent-workflow` (must match `WORKFLOW_SLUG`)
+6. Env vars: `ANTHROPIC_API_KEY`, `EXA_API_KEY`, `PYTHON_VERSION`: `3.12.3`
 
-- `RENDER_API_KEY`: your Render API key (triggers workflow tasks)
+### 3. History (optional)
 
-Click **Apply**. The Blueprint creates the web service.
+Create a Render PostgreSQL database and set its Internal URL as `DATABASE_URL` on the web service. Tables are auto-created on startup. Enables threaded research history with follow-up queries.
 
-### 2. Create the workflow service
+### 4. LangSmith (optional)
 
-Render Workflows aren't yet supported in Blueprints, so create it manually:
-
-1. In the [Dashboard](https://dashboard.render.com): **New** > **Workflow**
-2. Connect the same GitHub repo
-3. **Build Command**: `pip install -r requirements.txt`
-4. **Start Command**: `python -m tasks`
-5. **Name**: `research-agent-workflow` (matches the default `WORKFLOW_SLUG`)
-6. Set environment variables:
-
-| Variable | Required | Value |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | Yes | Your Anthropic key |
-| `EXA_API_KEY` | Yes | Your Exa key |
-| `PYTHON_VERSION` | Yes | `3.12.3` |
-| `ANTHROPIC_MODEL` | No | Default: `claude-sonnet-4-20250514` |
-| `AGENT_TEMPERATURE` | No | Default: `0.3` |
-| `LANGCHAIN_API_KEY` | No | LangSmith key (enables tracing) |
-
-7. Click **Create Workflow**
-
-The web service discovers the workflow by its slug automatically.
-
----
+Set `LANGCHAIN_API_KEY` on both services. Enables auto-tracing of all Claude and LangGraph calls, plus user feedback (thumbs up/down in the UI).
 
 ## Configuration
 
-### Web service
-
-| Variable | Required | Default | Description |
+| Variable | Where | Default | Description |
 |---|---|---|---|
-| `RENDER_API_KEY` | Yes | — | Triggers workflow tasks |
-| `WORKFLOW_SLUG` | No | `research-agent-workflow` | Workflow service slug |
-| `DATABASE_URL` | No | — | Enables research history sidebar (Render PostgreSQL) |
-| `LANGCHAIN_API_KEY` | No | — | Enables LangSmith tracing + feedback |
-| `LANGCHAIN_TRACING_V2` | No | `true` | LangSmith tracing flag |
-| `LANGCHAIN_PROJECT` | No | `research-agent` | LangSmith project name |
+| `RENDER_API_KEY` | Web service | (required) | Triggers workflow tasks |
+| `WORKFLOW_SLUG` | Web service | `research-agent-workflow` | Must match workflow service name |
+| `DATABASE_URL` | Web service | (optional) | PostgreSQL for research history |
+| `LANGCHAIN_API_KEY` | Both | (optional) | LangSmith tracing + feedback |
+| `ANTHROPIC_API_KEY` | Workflow | (required) | Claude API key |
+| `EXA_API_KEY` | Workflow | (required) | Exa semantic search |
+| `ANTHROPIC_MODEL` | Workflow | `claude-sonnet-4-20250514` | Claude model |
+| `AGENT_TEMPERATURE` | Workflow | `0.3` | LLM temperature |
 
-### Workflow service
-
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `ANTHROPIC_API_KEY` | Yes | — | Claude API key |
-| `EXA_API_KEY` | Yes | — | Exa semantic search |
-| `ANTHROPIC_MODEL` | No | `claude-sonnet-4-20250514` | Claude model |
-| `AGENT_TEMPERATURE` | No | `0.3` | LLM temperature |
-| `LANGCHAIN_API_KEY` | No | — | Enables LangSmith auto-tracing |
-| `LANGCHAIN_TRACING_V2` | No | `true` | LangSmith tracing flag |
-| `LANGCHAIN_PROJECT` | No | `research-agent` | LangSmith project name |
-
----
-
-## Project Structure
+## Project structure
 
 ```
-├── main.py                  # FastAPI web service (HTTP + CORS + static files)
-├── pipeline/
-│   ├── __init__.py          # Exports run_pipeline
-│   ├── orchestrator.py      # Dispatches workflow tasks, polls, streams SSE
-│   ├── history.py           # PostgreSQL threaded history (optional)
-│   ├── tracking.py          # LangSmith pipeline run lifecycle (optional)
-│   └── feedback.py          # POST /feedback: LangSmith user ratings (optional)
-├── tasks/
-│   ├── __init__.py          # Combines task apps for the workflow service
-│   ├── __main__.py          # Workflow entry point (python -m tasks)
-│   ├── llm.py               # Shared ChatAnthropic model + helpers
-│   ├── tools.py             # Exa tools for LangGraph
-│   ├── agent.py             # LangGraph ReAct agent
-│   ├── research_agent.py    # Workflow task wrapping the agent
-│   ├── classify.py          # classify_query task (research vs direct)
-│   ├── plan.py              # plan_research task
-│   └── synthesize.py        # synthesize task
-├── static/
-│   └── index.html           # UI (threaded Q&A, activity feed, light/dark mode)
-├── render.yaml              # Render Blueprint (web service)
-├── requirements.txt
-└── .env.example
+main.py                  FastAPI web service
+pipeline/
+  orchestrator.py        Dispatch tasks, poll, stream SSE
+  history.py             PostgreSQL threaded history (optional)
+  tracking.py            LangSmith pipeline run lifecycle (optional)
+  feedback.py            POST /feedback: user ratings (optional)
+tasks/
+  __init__.py            Combines task apps for the workflow service
+  __main__.py            Workflow entry point (python -m tasks)
+  llm.py                 Shared ChatAnthropic model
+  tools.py               Exa tools for LangGraph
+  agent.py               LangGraph ReAct agent
+  research_agent.py      Workflow task wrapping the agent
+  classify.py            classify_query task
+  plan.py                plan_research task
+  synthesize.py          synthesize task
+static/index.html        UI: threaded Q&A, activity feed
+render.yaml              Render Blueprint
 ```
-
----
 
 ## API
 
-### `POST /research`
+**`POST /research`**: starts the pipeline, returns SSE stream. Body: `{ "question": "...", "thread_id": "..." }`. Events: `status`, `classified`, `plan`, `agent_start`, `agent_done`, `done`, `error`.
 
-Starts the research workflow. Returns a Server-Sent Events stream.
+**`POST /feedback`**: submits thumbs up/down to LangSmith. Body: `{ "run_id": "...", "score": 1 }`.
 
-**Request:**
-```json
-{ "question": "What are the latest advances in quantum computing?" }
-```
+**`GET /history`**: recent threads. **`GET /history/:id`**: thread detail. **`DELETE /history/:id`**: delete thread.
 
-For follow-up queries within a thread:
-```json
-{ "question": "What about the cost challenges?", "thread_id": "uuid-from-done-event" }
-```
-
-**SSE events (research query):**
-```
-event: status
-data: {"phase": "classifying", "tools": ["Render Workflows", "LangChain", "Claude"]}
-
-event: classified
-data: {"type": "research", "tools": [...]}
-
-event: status
-data: {"phase": "planning", "tools": ["Render Workflows", "LangChain", "Claude"]}
-
-event: plan
-data: {"subtopics": ["quantum hardware", "error correction", "quantum software"], "tools": [...]}
-
-event: agent_start
-data: {"index": 0, "subtopic": "quantum hardware", "tools": ["Render Workflows", "LangGraph", "Exa", "Claude"]}
-
-event: agent_done
-data: {"index": 0, "subtopic": "quantum hardware", "tools": [...]}
-
-event: status
-data: {"phase": "synthesizing", "tools": ["Render Workflows", "LangChain", "Claude"]}
-
-event: done
-data: {"report": {...}, "run_id": "...", "thread_id": "...", "elapsed": 68, "tools": [...]}
-```
-
-**SSE events (direct query, e.g. "hi"):**
-```
-event: status
-data: {"phase": "classifying", "tools": [...]}
-
-event: classified
-data: {"type": "direct", "tools": [...]}
-
-event: direct_answer
-data: {"reply": "Hello! I'm a research agent...", "run_id": "...", "thread_id": "...", "elapsed": 3, "tools": [...]}
-```
-
-### `POST /feedback`
-
-Submits a thumbs up/down rating to LangSmith. No-ops if LangSmith is not configured.
-
-```json
-{ "run_id": "uuid-from-done-event", "score": 1, "comment": "Great report" }
-```
-
-### `GET /history`
-
-Returns recent threads (newest first). Returns `[]` if no database is configured.
-
-### `GET /history/:id`
-
-Returns a thread with all its research entries.
-
-### `DELETE /history/:id`
-
-Deletes a thread and all its entries.
-
-### `GET /health`
-
-Returns `{ "status": "ok" }`.
-
----
-
-## History (Optional)
-
-Set `DATABASE_URL` on the web service to enable threaded research history with follow-up queries.
-
-1. Create a **PostgreSQL** database on the [Render Dashboard](https://dashboard.render.com)
-2. Copy the **Internal URL** and set it as `DATABASE_URL` on the web service
-3. Tables are auto-created on first startup
-
-Each research creates a thread. Follow-up queries within the same thread pass the previous report's title and section headings (~50 tokens) as context, so Claude plans subtopics that go deeper instead of repeating.
-
-To disable: unset `DATABASE_URL`. The sidebar shows "No history yet" and all history functions no-op.
-
-To remove entirely: delete `pipeline/history.py` and the related imports in `main.py` and `pipeline/orchestrator.py`.
-
----
-
-## LangSmith (Optional)
-
-Set `LANGCHAIN_API_KEY` on both services to enable:
-
-- **Auto-tracing**: every ChatAnthropic and LangGraph call appears in LangSmith with token counts, latency, and tool call details
-- **Pipeline tracking**: each request creates a root run linking question → report
-- **User feedback**: thumbs up/down in the UI submits ratings linked to the pipeline run
-
-To disable: unset `LANGCHAIN_API_KEY`. Everything gracefully no-ops.
-
-To remove entirely: delete `pipeline/feedback.py`, `pipeline/tracking.py`, and the related import lines in `main.py` and `pipeline/orchestrator.py`.
-
----
+**`GET /health`**: `{ "status": "ok" }`.
 
 ## Troubleshooting
 
-**`ValueError: Either provide a token or set the RENDER_API_KEY environment variable`**
-The web service can't find its Render API key. Set `RENDER_API_KEY` in the service's environment variables in the Dashboard. This key is marked `sensitive` in the Blueprint and must be set manually.
+**Workflow tasks not starting**: check that `WORKFLOW_SLUG` matches the workflow service name (default: `research-agent-workflow`).
 
-**Workflow tasks not starting**
-Check that the workflow service is named `research-agent-workflow` (or that `WORKFLOW_SLUG` matches). The web service discovers the workflow by slug.
+**LangSmith traces not appearing**: set `LANGCHAIN_API_KEY` on the workflow service too (not just the web service). The workflow is where Claude and LangGraph calls happen.
 
-**LangSmith traces not appearing**
-Ensure `LANGCHAIN_API_KEY` is set on the workflow service too (not just the web service). The workflow service is where Claude and LangGraph calls happen.
-
-**Exa search returning empty results**
-Check your `EXA_API_KEY` is valid. Exa occasionally returns 503s under load: Render Workflows will auto-retry with backoff.
+**Exa returning empty**: check `EXA_API_KEY`. Exa occasionally returns 503s under load: Render Workflows auto-retries with backoff.
