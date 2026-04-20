@@ -1,12 +1,18 @@
 """
-Pipeline package: exposes run_pipeline for the web service.
+Pipeline package: exposes ``run_pipeline`` for the web service.
 
-The web service (main.py) imports `run_pipeline` from this package.
-The orchestrator dispatches plan, research, and synthesize as individual
-workflow tasks via the Render SDK, polls each one, and streams real-time
-progress back to the client as Server-Sent Events.
+``run_pipeline`` is loaded lazily so importing ``pipeline.history`` (used by
+adapters) does not require ``RENDER_API_KEY`` or the orchestrator stack.
 """
 
-from .orchestrator import run_pipeline
+from typing import Any
 
 __all__ = ["run_pipeline"]
+
+
+def __getattr__(name: str) -> Any:
+    if name == "run_pipeline":
+        from .orchestrator import run_pipeline
+
+        return run_pipeline
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

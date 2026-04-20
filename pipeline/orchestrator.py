@@ -51,6 +51,7 @@ def _to_dict(obj):
 
 
 def sse(event: str, data: dict) -> str:
+    """Format one Server-Sent Events message for the browser EventSource client."""
     return f"event: {event}\ndata: {json.dumps(data, default=str)}\n\n"
 
 
