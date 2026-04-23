@@ -54,7 +54,7 @@ The research loop is slow and chatty: classification, planning, parallel agents,
 
 ## Prerequisites
 
-- A [Render account](https://render.com/register?utm_source=github&utm_medium=referral&utm_campaign=ojus_demos&utm_content=readme_link)
+- A [Render account](https://dashboard.render.com/register?utm_source=github&utm_medium=referral&utm_campaign=ojus_demos&utm_content=readme_link)
 - API keys: [Render](https://render.com/docs/api#1-create-an-api-key), [Anthropic](https://console.anthropic.com/), [Exa](https://exa.ai/)
 - Optional: [LangSmith](https://smith.langchain.com/) for tracing and feedback
 
