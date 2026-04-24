@@ -197,14 +197,6 @@ function createLiveEntryBlock(question) {
   feed.className = "activity-feed";
   block.appendChild(feed);
 
-  const dashLink = document.createElement("a");
-  dashLink.href = "https://render.com/docs/workflows-tutorial";
-  dashLink.target = "_blank";
-  dashLink.rel = "noopener noreferrer";
-  dashLink.className = "pipeline-doc-link";
-  dashLink.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;flex-shrink:0" aria-hidden="true"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Build your first workflow';
-  block.appendChild(dashLink);
-
   const errorEl = document.createElement("div");
   errorEl.className = "activity-error";
   block.appendChild(errorEl);
