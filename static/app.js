@@ -27,11 +27,11 @@ function renderSignupUrlWithUtms(content = "footer_link") {
     utm_source: "github", utm_medium: "referral",
     utm_campaign: "ojus_demos", utm_content: content,
   });
-  return `https://dashboard.render.com/register?${params.toString()}`;
+  return `https://render.com/register?${params.toString()}`;
 }
 
 document.getElementById("deploy-btn").href = `https://render.com/deploy?repo=${encodeURIComponent(GITHUB_REPO)}`;
-document.getElementById("render-link").href = renderSignupUrlWithUtms("footer_link");
+document.getElementById("signup-footer").href = renderSignupUrlWithUtms("footer_link");
 document.getElementById("github-link").href = GITHUB_REPO;
 document.getElementById("theme-toggle").addEventListener("click", toggleTheme);
 updateThemeIcons(document.documentElement.classList.contains("dark") ? "dark" : "light");

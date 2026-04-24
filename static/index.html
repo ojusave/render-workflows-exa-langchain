@@ -187,7 +187,7 @@
     button[type="submit"] svg { width: 14px; height: 14px; }
 
     /* --- Footer --- */
-    footer { padding: 0.5rem 1.25rem; padding-left: calc(var(--sidebar-width) + 1.25rem); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 0.375rem; font-size: 0.675rem; color: var(--text-dim); background: var(--bg); }
+    footer { padding: 0.5rem 1.25rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 0.375rem; font-size: 0.675rem; color: var(--text-dim); background: var(--bg); }
     footer a { color: var(--text-muted); }
     footer a:hover { color: var(--text); }
     footer .sep { color: var(--sep); }
@@ -215,7 +215,6 @@
       .header-btn .btn-label { display: none; }
       .report-card { padding: 1.25rem; }
       .entry-question { font-size: 0.95rem; }
-      footer { padding-left: 1.25rem; }
     }
   </style>
 </head>
@@ -259,6 +258,10 @@
         <div class="welcome" id="welcome">
           <h2>Research anything</h2>
           <p>Ask a question. The agent breaks it into subtopics, runs parallel searches, and synthesizes a structured report: powered by <a href="https://render.com/workflows" target="_blank" rel="noopener">Render Workflows</a>.</p>
+          <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);padding:0.75rem 1rem;margin:0.75rem auto 0.75rem;text-align:left;max-width:480px">
+            <p style="font-size:0.75rem;color:var(--red);font-weight:600;margin-bottom:0.25rem">Do not submit sensitive or personal information</p>
+            <p style="font-size:0.7rem;color:var(--text-muted);line-height:1.5;margin:0">This is a public demo. While session data is deleted on expiry, your queries and synthesized reports may be sent to model and search providers. Use sample or non-sensitive topics only.</p>
+          </div>
           <div class="examples">
             <button type="button" onclick="sendExample(this)">What are the latest advances in quantum computing?</button>
             <button type="button" onclick="sendExample(this)">How does mRNA vaccine technology work?</button>
@@ -276,21 +279,23 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
       </form>
+
+      <footer>
+        <span>Built with</span>
+        <a href="https://www.langchain.com/langgraph" target="_blank" rel="noopener">LangGraph</a>
+        <span class="sep">&middot;</span>
+        <a href="https://exa.ai/" target="_blank" rel="noopener">Exa</a>
+        <span class="sep">&middot;</span>
+        <a href="https://www.anthropic.com/" target="_blank" rel="noopener">Claude</a>
+        <span class="sep">&middot;</span>
+        <a href="https://render.com/docs/workflows" target="_blank" rel="noopener">Render Workflows</a>
+        <span class="sep">&middot;</span>
+        <a id="signup-footer" href="" target="_blank" rel="noopener">Render</a>
+        <span class="sep">&middot;</span>
+        <a id="github-link" href="" target="_blank" rel="noopener">GitHub</a>
+      </footer>
     </div>
   </div>
-
-  <footer>
-    <span>Built with</span>
-    <a href="https://www.langchain.com/langgraph" target="_blank" rel="noopener">LangGraph</a>
-    <span class="sep">&middot;</span>
-    <a href="https://exa.ai/" target="_blank" rel="noopener">Exa</a>
-    <span class="sep">&middot;</span>
-    <a href="https://www.anthropic.com/" target="_blank" rel="noopener">Claude</a>
-    <span class="sep">&middot;</span>
-    <a id="render-link" href="" target="_blank" rel="noopener">Render</a>
-    <span class="sep">&middot;</span>
-    <a id="github-link" href="" target="_blank" rel="noopener">GitHub</a>
-  </footer>
 
   <script type="module" src="/static/app.js"></script>
 </body>

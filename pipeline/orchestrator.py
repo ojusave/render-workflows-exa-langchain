@@ -158,10 +158,23 @@ async def run_pipeline(
         # Phase 2: parallel research agents
         agents = []
         for i, st in enumerate(subtopics):
-            started = await render.workflows.start_task(
-                f"{WORKFLOW_SLUG}/research_subtopic",
-                {"subtopic": st["topic"], "criteria": st["criteria"]},
-            )
+            # Small delay between task launches to avoid rate limits
+            if i > 0:
+                await asyncio.sleep(0.5)
+
+            try:
+                started = await render.workflows.start_task(
+                    f"{WORKFLOW_SLUG}/research_subtopic",
+                    {"subtopic": st["topic"], "criteria": st["criteria"]},
+                )
+            except Exception as launch_err:
+                # Retry once after a longer delay if rate limited
+                await asyncio.sleep(2)
+                started = await render.workflows.start_task(
+                    f"{WORKFLOW_SLUG}/research_subtopic",
+                    {"subtopic": st["topic"], "criteria": st["criteria"]},
+                )
+
             agents.append({
                 "id": started.id,
                 "index": i,
