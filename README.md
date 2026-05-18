@@ -1,189 +1,154 @@
+<div align="center">
+
 # Research Agent
 
-Ask a research question. The workflow classifies it, plans subtopics, runs parallel LangGraph agents with Exa search, then returns a synthesized report with sources. Powered by [Render Workflows](https://render.com/workflows).
+A real-time research assistant that combines **Render Workflows** for parallel orchestration with **LangGraph + Exa + Claude** for the actual research. Ask a question and watch it get classified, planned, researched in parallel, and synthesized into a sourced report — streamed live to the browser.
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ojusave/langchain-test)
-[![Discord: Render Developers](https://img.shields.io/badge/Discord-Render%20Developers-5865F2?logo=discord&logoColor=white)](https://discord.gg/gvC7ceS9YS)
+<p>
+  <a href="https://render.com/deploy?repo=https://github.com/ojusave/render-workflows-exa-langchain">
+    <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render" />
+  </a>
+</p>
 
-This repo doubles as a **Render learning path**: you get a working LangGraph + Exa research stack, and you can read the code as a map of where Render fits (FastAPI and SSE on one service, tasks and retries on another). The Python SDK (`render_sdk`) is the glue.
+<p>
+  <a href="https://render.com">
+    <img src="https://img.shields.io/badge/Render-Workflows-6c63ff?logo=render&logoColor=white" alt="Render Workflows" />
+  </a>
+  <a href="https://www.langchain.com">
+    <img src="https://img.shields.io/badge/LangChain-LangGraph-1c3c34?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzI2YTE3YiIgZD0iTTcgMTRoMTBhMyAzIDAgMCAwIDAtNkg3YTMgMyAwIDAgMCAwIDZ6Ii8+PC9zdmc+&logoColor=white" alt="LangChain" />
+  </a>
+  <a href="https://exa.ai">
+    <img src="https://img.shields.io/badge/Exa-Semantic%20Search-1a1a1a?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIi8+PGxpbmUgeDE9IjE0LjUiIHkxPSIxNC41IiB4Mj0iMjAiIHkyPSIyMCIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4=&logoColor=white" alt="Exa" />
+  </a>
+  <a href="https://discord.gg/gvC7ceS9YS">
+    <img src="https://img.shields.io/badge/Discord-Render%20Developers-5865F2?logo=discord&logoColor=white" alt="Discord" />
+  </a>
+</p>
 
-## Table of contents
+</div>
 
-- [Highlights](#highlights)
-- [Overview](#overview)
-- [Why build it this way on Render](#why-build-it-this-way-on-render)
-- [Prerequisites](#prerequisites)
-- [Deploy](#deploy)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [API](#api)
-- [How it works](#how-it-works)
-- [Project structure](#project-structure)
-- [Community](#community)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [License](#license)
+## What This Demo Shows
 
-## Highlights
+This repo demonstrates how to build agentic research applications using:
 
-- **Same SDK, two processes**: the workflow service registers tasks with `Workflows()` and `@app.task(...)` from `render_sdk`; the web service dispatches and polls with `RenderAsync`. One mental model: define work in `tasks/`, trigger it from `pipeline/orchestrator.py`.
-- **Workflow-backed research**: planning, search agents, and synthesis run as Render Workflow tasks, not inside the FastAPI process.
-- **Streaming client**: the UI shows an activity feed while the pipeline runs; status arrives over SSE from `POST /research`.
-- **Optional threaded history**: add Postgres (`DATABASE_URL`) for multi-turn threads and follow-ups.
-- **Optional observability**: LangSmith keys enable traces and in-UI feedback when you wire `LANGCHAIN_API_KEY` on both services.
-- **Ports and adapters**: threaded history goes through `ThreadRepository`; LangSmith ratings through `FeedbackSubmitter` — both wired in [`composition.py`](composition.py). Postgres and LangSmith stay in [`adapters/`](adapters/).
-- **One JSON contract**: non-streaming HTTP responses use `{ data, error, meta }` ([`shared/api_envelope.py`](shared/api_envelope.py)). The UI uses a single module ([`static/api-client.js`](static/api-client.js)). `POST /research` stays SSE (not wrapped).
+| Platform | Role |
+| --- | --- |
+| **[Render Workflows](https://render.com/docs/workflows)** | Orchestrates the four research stages as isolated tasks with their own retries, timeouts, and dashboard replay |
+| **[LangChain + LangGraph](https://www.langchain.com)** | Runs the per-subtopic ReAct loop — Claude picks tools, observes results, decides when to stop |
+| **[Exa](https://exa.ai)** | Semantic web search, exposed to the agent as LangGraph tools (`exa_search`, `find_similar`) |
+| **[Anthropic Claude](https://www.anthropic.com)** | The brain — classifier, planner, ReAct agent, and synthesizer |
+| **[Render Web Services](https://render.com/docs/web-services)** | Hosts the FastAPI app, streams SSE progress, serves the UI |
+| **[Render Postgres](https://render.com/docs/databases)** *(optional)* | Stores threaded research history for follow-up queries |
 
-## Overview
+## Architecture
 
-This repo is a Python FastAPI front end plus a Python workflow service that hosts LangGraph + Anthropic + Exa. Simple or off-topic questions get a fast path without spinning up research. The pattern matches the Render guidance: thin web, fat tasks.
+![Architecture](static/images/architecture-diagram.gif)
 
-## Why build it this way on Render
+### How It Works
 
-The research loop is slow and chatty: classification, planning, parallel agents, synthesis. Running all of that inside the same process as your HTTP server ties deploys, memory, and timeouts together. You fix a prompt in `tasks/` and suddenly you are redeploying the API that serves health checks.
+1. **Browser** posts a question to the **FastAPI web service** on Render
+2. **FastAPI** streams progress via SSE and dispatches four kinds of work to **Render Workflows**
+3. **Render Workflows** runs each stage as its own task with isolated CPU, retries, and timeout:
 
-**Render Workflows** push that work to a **separate service** with its own CPU and retry policy. FastAPI stays responsible for HTTP, SSE, and optional history: see `pipeline/orchestrator.py`, which only dispatches tasks, polls status, and streams events (no LangGraph logic in the web tier).
+| Render Workflow Task | What It Does | Powered By |
+| --- | --- | --- |
+| `classify_query` | Decides whether the question needs web research or can be answered directly. Direct answers short-circuit the rest of the pipeline. | Claude |
+| `plan_research` | Breaks the question into focused subtopics, each with success criteria. | Claude |
+| `research_subtopic × N` | Parallel fan-out — one LangGraph ReAct agent per subtopic. Each agent searches with Exa until the criteria are met. | LangGraph + Exa + Claude |
+| `synthesize` | Merges every agent's findings into one structured report with title, summary, sections, and deduped sources. | Claude |
 
-**Define tasks** under `tasks/`. Each `@app.task(plan=..., timeout_seconds=..., retry=...)` is a unit you tune independently (see `tasks/classify.py` for an example of explicit rationale in comments).
+4. Results stream back to the browser as named SSE events (`status`, `classified`, `plan`, `agent_start`, `agent_done`, `done`)
+5. *(Optional)* If `DATABASE_URL` is set, the conversation persists as a thread you can reopen and follow up on
 
-**Trigger from the web** with `RenderAsync` and `start_task` / polling against `${WORKFLOW_SLUG}/task_name`. That string must match the workflow service name in the Render dashboard and the Python function name registered on the workflow app.
+The pattern is **thin web, fat tasks**: FastAPI only dispatches and polls — no LangGraph or Claude calls happen in the request path. You can change agent prompts or tools without redeploying the API.
 
-**Change behavior** by editing task code and redeploying the workflow service. The web service keeps calling the same task names until you change the orchestration or add new tasks. That is the main payoff when you are learning Render: you can experiment with agents and tools without treating every change as a full-stack redeploy.
+## Quick Start
 
-**Sibling examples**: same architectural story in Node with LlamaCloud ([render-workflows-llamaindex](https://github.com/ojusave/render-workflows-llamaindex)) and voice + workflows ([ravendr](https://github.com/ojusave/ravendr)). Compare orchestrators if you want one pattern in two languages.
+### Prerequisites
 
-## Prerequisites
+- [Render account](https://dashboard.render.com/register?utm_source=github&utm_medium=referral&utm_campaign=ojus_demos&utm_content=readme_link) (free tier works)
+- [Anthropic API key](https://console.anthropic.com/)
+- [Exa API key](https://exa.ai/)
 
-- A [Render account](https://dashboard.render.com/register?utm_source=github&utm_medium=referral&utm_campaign=ojus_demos&utm_content=readme_link)
-- API keys: [Render](https://render.com/docs/api#1-create-an-api-key), [Anthropic](https://console.anthropic.com/), [Exa](https://exa.ai/)
-- Optional: [LangSmith](https://smith.langchain.com/) for tracing and feedback
+### Deploy
 
-## Deploy
+1. Click **Deploy to Render** above
+2. You'll be prompted for `RENDER_API_KEY` — [get one here](https://render.com/docs/api#1-create-an-api-key)
 
-Installation is Render: clone is only needed if you fork the repo. Use the button below or import [`render.yaml`](render.yaml).
+3. Create the Workflow service manually:
+   - Go to [Render Dashboard](https://dashboard.render.com) → **New** → **Workflow**
+   - Connect this repository
+   - Build command: `pip install -r requirements.txt`
+   - Start command: `python -m tasks`
+   - Name: `research-agent-workflow` (must match `WORKFLOW_SLUG` on the web service)
+   - Env vars: `ANTHROPIC_API_KEY`, `EXA_API_KEY`, `PYTHON_VERSION=3.12.3`
 
-### 1. Web service (via Blueprint)
+4. Open the web service URL and ask a research question.
 
-Click **Deploy to Render** above. Set `RENDER_API_KEY` during setup.
+### Optional Integrations
 
-### 2. Workflow service (manual)
-
-1. [Render Dashboard](https://dashboard.render.com) > **New** > **Workflow**
-2. Connect the same repo
-3. Build: `pip install -r requirements.txt`
-4. Start: `python -m tasks`
-5. Name: `research-agent-workflow` (must match `WORKFLOW_SLUG`)
-6. Env vars: `ANTHROPIC_API_KEY`, `EXA_API_KEY`, `PYTHON_VERSION`: `3.12.3`
-
-### 3. History (optional)
-
-Create a Render PostgreSQL database and set its Internal URL as `DATABASE_URL` on the web service. Tables are auto-created on startup. Enables threaded research history with follow-up queries.
-
-### 4. LangSmith (optional)
-
-Set `LANGCHAIN_API_KEY` on both services. Enables auto-tracing of Claude and LangGraph calls, plus user feedback (thumbs up/down in the UI).
-
-### Monorepo (optional)
-
-If this folder lives inside a monorepo (e.g. **Samples**), use the repository root [`render.yaml`](../render.yaml) to deploy **all** demo services with preview environments. This folder’s [`render.yaml`](render.yaml) is for **standalone** clones of **this** repo only.
+| Add | How | Enables |
+| --- | --- | --- |
+| **Threaded history** | Create a Render PostgreSQL DB, set its Internal URL as `DATABASE_URL` on the web service | Sidebar of past threads, follow-up queries with prior context |
+| **LangSmith tracing** | Set `LANGCHAIN_API_KEY` on **both** services | Auto-traced Claude + LangGraph calls, thumbs-up/down feedback in the UI |
 
 ## Configuration
 
 | Variable | Where | Default | Description |
 |---|---|---|---|
-| `RENDER_API_KEY` | Web service | (required) | Triggers workflow tasks |
-| `WORKFLOW_SLUG` | Web service | `research-agent-workflow` | Must match workflow service name |
-| `DATABASE_URL` | Web service | (optional) | PostgreSQL for research history |
-| `LANGCHAIN_API_KEY` | Both | (optional) | LangSmith tracing + feedback |
-| `ANTHROPIC_API_KEY` | Workflow | (required) | Claude API key |
-| `EXA_API_KEY` | Workflow | (required) | Exa semantic search |
+| `RENDER_API_KEY` | Web | required | Triggers workflow tasks |
+| `WORKFLOW_SLUG` | Web | `research-agent-workflow` | Must match workflow service name |
+| `DATABASE_URL` | Web | optional | PostgreSQL for thread history |
+| `LANGCHAIN_API_KEY` | Both | optional | LangSmith tracing + feedback |
+| `ANTHROPIC_API_KEY` | Workflow | required | Claude API key |
+| `EXA_API_KEY` | Workflow | required | Exa semantic search |
 | `ANTHROPIC_MODEL` | Workflow | `claude-sonnet-4-20250514` | Claude model |
 | `AGENT_TEMPERATURE` | Workflow | `0.3` | LLM temperature |
 
-## Usage
+## API
 
-After deploy, open the web service URL. Type a question in the UI: research queries trigger the workflow; casual prompts get a direct answer. If `DATABASE_URL` is set, conversations persist as threads you can reopen.
+- **`POST /research`** — SSE stream. Body `{ "question": "...", "thread_id"?: "..." }`. Events: `status`, `classified`, `plan`, `agent_start`, `agent_done`, `direct_answer`, `done`, `error`.
+- **`GET /history`** · **`GET /history/:id`** · **`DELETE /history/:id`** — JSON envelope `{ data, error, meta }`
+- **`POST /feedback`** — `{ "run_id": "...", "score": 1 | -1 }`
+- **`GET /health`** — liveness
 
-Example API call (replace the host and use a real question):
+Example:
 
 ```bash
 curl -N -X POST "https://YOUR_SERVICE.onrender.com/research" \
   -H "Content-Type: application/json" \
-  -d '{"question":"What are the main tradeoffs between X and Y?","thread_id":""}'
+  -d '{"question":"What are the main tradeoffs between RAG and fine-tuning?"}'
 ```
 
-The response is an SSE stream (`status`, `classified`, `plan`, agent events, `done`).
-
-## API
-
-**JSON responses** (everything except `POST /research`) use:
-
-```json
-{ "data": <T | null>, "error": { "code": "...", "message": "..." } | null, "meta": {} }
-```
-
-**`POST /research`**: SSE stream (not an envelope). Body: `{ "question": "...", "thread_id": "..." }`. Events: `status`, `classified`, `plan`, `agent_start`, `agent_done`, `done`, `error`.
-
-**`POST /feedback`**: `data` holds `{ "status": "ok" | "skipped" | "error", ... }`. Body: `{ "run_id": "...", "score": 1 }`.
-
-**`GET /history`**: `data` is an array of thread summaries. **`GET /history/:id`**: `data` is thread detail. **`DELETE /history/:id`**: `data` is `{ "status": "ok" }` on success.
-
-**`GET /health`**: `data` is `{ "status": "ok" }`.
-
-**Static files** are served under `/static/*` (including [`static/app.js`](static/app.js) and [`static/api-client.js`](static/api-client.js)).
-
-## How it works
-
-![Architecture](static/images/architecture.png)
-
-![Pipeline flow](static/images/pipeline.png)
-
-Non-research queries (greetings, coding help, simple questions) get a direct reply without triggering search. The UI streams live progress as an activity feed.
-
-## Project structure
+## Project Structure
 
 ```
-main.py                  FastAPI web service
+main.py                FastAPI web service
 composition.py         Wires ports to adapters
-shared/api_envelope.py JSON response envelope helpers
-ports/                 ThreadRepository, FeedbackSubmitter protocols
-adapters/              Postgres history + LangSmith feedback
 pipeline/
-  orchestrator.py        Dispatch tasks, poll, stream SSE
-  history.py             PostgreSQL threaded history (optional)
-  tracking.py            LangSmith pipeline run lifecycle (optional)
+  orchestrator.py      Dispatch tasks, poll, stream SSE
+  history.py           Postgres threaded history (optional)
+  tracking.py          LangSmith pipeline run lifecycle (optional)
 tasks/
-  __init__.py            Combines task apps for the workflow service
-  __main__.py            Workflow entry point (python -m tasks)
-  llm.py                 Shared ChatAnthropic model
-  tools.py               Exa tools for LangGraph
-  agent.py               LangGraph ReAct agent
-  research_agent.py      Workflow task wrapping the agent
-  classify.py            classify_query task
-  plan.py                plan_research task
-  synthesize.py          synthesize task
-static/index.html        UI shell
-static/app.js            UI logic (ES module)
-static/api-client.js     Single client for JSON APIs + SSE helpers
-render.yaml              Render Blueprint
+  __main__.py          Workflow entry point (python -m tasks)
+  classify.py          classify_query task
+  plan.py              plan_research task
+  research_agent.py    research_subtopic task (wraps LangGraph agent)
+  synthesize.py        synthesize task
+  agent.py             LangGraph ReAct agent
+  tools.py             Exa tools
+  llm.py               Shared ChatAnthropic model
+ports/ · adapters/     ThreadRepository + FeedbackSubmitter (hex layout)
+shared/api_envelope.py JSON response envelope helpers
+static/                Single-page UI (index.html · app.js · api-client.js)
+static/architecture.html  Source for the architecture diagram above
+render.yaml            Render Blueprint
 ```
 
 ## Community
 
-Questions about Render, workflows, or troubleshooting a deploy: join the [Render Developers Discord](https://discord.gg/gvC7ceS9YS).
-
-## Troubleshooting
-
-**Workflow tasks not starting**: check that `WORKFLOW_SLUG` matches the workflow service name (default: `research-agent-workflow`).
-
-**LangSmith traces not appearing**: set `LANGCHAIN_API_KEY` on the workflow service too (not just the web service). The workflow is where Claude and LangGraph calls happen.
-
-**Exa returning empty**: check `EXA_API_KEY`. Exa occasionally returns 503s under load: Render Workflows auto-retries with backoff.
-
-## Contributing
-
-Open an issue or a focused PR; match the existing `main.py` / `pipeline/` / `tasks/` layout. Do not commit secrets. Full end-to-end runs need Render plus Anthropic and Exa keys—note in the PR what you verified if you cannot run a live deploy.
+Questions about Render, workflows, or a stuck deploy: join the [Render Developers Discord](https://discord.gg/gvC7ceS9YS).
 
 ## License
 
-[MIT](LICENSE). Copyright (c) 2026 Ojusave.
+[MIT](LICENSE)

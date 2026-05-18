@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Research Agent — Architecture</title>
+<link rel="icon" href="https://render.com/icon.svg" type="image/svg+xml"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@300;400;500&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --ink:#18181b;
+    --muted:#71717a;
+    --line:#e4e4e7;
+    --bg:#fafafa;
+    --card:#ffffff;
+    --render:#6c63ff;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:"Inter","Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+  .page{max-width:1900px;margin:0 auto;padding:40px 24px;}
+  svg.diagram{display:block;width:100%;height:auto}
+</style>
+</head>
+<body>
+<div class="page">
+  <svg class="diagram" viewBox="0 0 1900 1240" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" fill="#18181b"/>
+      </marker>
+      <marker id="arrPurple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" fill="#6c63ff"/>
+      </marker>
+      <marker id="arrMuted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" fill="#71717a"/>
+      </marker>
+
+      <!-- Vendor logos as inline SVG symbols so the file is self-contained -->
+      <symbol id="logoClaude" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="14" fill="#cc785c"/>
+        <path d="M21 44 L28.5 22 L33 22 L40.5 44 L36 44 L34.5 39 L27 39 L25.5 44 Z M28 35.5 L33.5 35.5 L30.75 27 Z" fill="#fff"/>
+      </symbol>
+      <symbol id="logoExa" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="14" fill="#1a1a1a"/>
+        <circle cx="28" cy="32" r="13" fill="none" stroke="#fff" stroke-width="3.2"/>
+        <line x1="38" y1="42" x2="48" y2="52" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="logoLangChain" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="14" fill="#1c3c34"/>
+        <path d="M18 38 q-4 0 -4 -4 q0 -4 4 -4 l8 0 l0 -4 l-8 0 q-8 0 -8 8 q0 8 8 8 l8 0 l0 -4 z" fill="#26a17b"/>
+        <path d="M46 26 q4 0 4 4 q0 4 -4 4 l-8 0 l0 4 l8 0 q8 0 8 -8 q0 -8 -8 -8 l-8 0 l0 4 z" fill="#26a17b"/>
+        <rect x="24" y="30" width="16" height="4" fill="#26a17b"/>
+      </symbol>
+      <symbol id="logoUser" viewBox="0 0 80 110">
+        <circle cx="40" cy="22" r="16" fill="#fff" stroke="#18181b" stroke-width="1.8"/>
+        <path d="M8 100 Q8 46 40 46 Q72 46 72 100 Z" fill="#fff" stroke="#18181b" stroke-width="1.8"/>
+      </symbol>
+
+      <style><![CDATA[
+        .t-title{font-family:Inter,sans-serif;font-size:14px;font-weight:600;fill:#18181b}
+        .t-sub{font-family:Inter,sans-serif;font-size:12px;fill:#71717a}
+        .t-edge{font-family:Inter,sans-serif;font-size:12px;fill:#71717a}
+        .t-edge-strong{font-family:Inter,sans-serif;font-size:12px;font-weight:500;fill:#18181b}
+        .t-panel{font-family:Roboto,Inter,sans-serif;font-size:22px;font-weight:300;letter-spacing:-0.01em;fill:#6c63ff}
+        .t-panel-sub{font-family:Inter,sans-serif;font-size:12px;fill:#71717a;text-anchor:middle}
+        .t-step{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:16px;font-weight:500;fill:#18181b}
+        .t-desc{font-family:Inter,sans-serif;font-size:12px;fill:#52525b}
+        .t-note{font-family:Inter,sans-serif;font-size:10px;font-weight:600;fill:#6c63ff;letter-spacing:0.08em;text-transform:uppercase}
+        .t-vendor{font-family:Inter,sans-serif;font-size:11px;font-weight:600;fill:#18181b;text-anchor:middle}
+        .t-svc-title{font-family:Inter,sans-serif;font-size:15px;font-weight:600;fill:#18181b}
+        .t-svc-desc{font-family:Inter,sans-serif;font-size:11px;fill:#71717a}
+        .t-legend{font-family:Inter,sans-serif;font-size:11px;font-weight:500;fill:#18181b}
+        .t-h1{font-family:Inter,sans-serif;font-size:26px;font-weight:700;fill:#18181b}
+        .t-h2{font-family:Inter,sans-serif;font-size:14px;fill:#71717a}
+
+        @keyframes flow { to { stroke-dashoffset: -20; } }
+        .flow { stroke-dasharray: 6 6; animation: flow 1.4s linear infinite; }
+        @keyframes flowSlow { to { stroke-dashoffset: -14; } }
+        .flow-slow { stroke-dasharray: 4 4; animation: flowSlow 1.8s linear infinite; }
+      ]]></style>
+    </defs>
+
+    <!-- ============ TITLE ============ -->
+    <text x="950" y="50" text-anchor="middle" class="t-h1">Research Agent — Architecture</text>
+    <text x="950" y="78" text-anchor="middle" class="t-h2">FastAPI dispatches workflow tasks; LangGraph + Exa + Claude do the work; results stream back over SSE</text>
+
+    <!-- ============ USER ============ -->
+    <g transform="translate(40,520)">
+      <use href="#logoUser" x="0" y="0" width="80" height="110"/>
+      <text x="40" y="132" text-anchor="middle" class="t-title">User</text>
+      <text x="40" y="150" text-anchor="middle" class="t-sub">Browser</text>
+    </g>
+
+    <!-- User ↔ Web Service edge (HTTP request + SSE stream) -->
+    <g>
+      <path d="M130 560 L235 560" stroke="#18181b" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+      <text x="182" y="548" text-anchor="middle" class="t-edge-strong">question</text>
+      <text x="182" y="562" text-anchor="middle" class="t-edge">POST /research</text>
+
+      <path d="M235 600 L130 600" stroke="#6c63ff" stroke-width="1.6" fill="none" marker-end="url(#arrPurple)" class="flow"/>
+      <text x="182" y="618" text-anchor="middle" class="t-edge" fill="#6c63ff">SSE: status · plan · agent · done</text>
+    </g>
+
+    <!-- ============ RENDER WEB SERVICE ============ -->
+    <g transform="translate(235,160)">
+      <rect width="380" height="820" rx="0" fill="#fff" stroke="#6c63ff" stroke-width="1.6"/>
+      <image href="images/favicons/render.svg" x="46" y="20" width="26" height="26"/>
+      <text x="80" y="42" class="t-panel">Render Web Service</text>
+      <text x="190" y="62" class="t-panel-sub">FastAPI · Python · Starter plan</text>
+
+      <!-- Sub-component: FastAPI app -->
+      <g transform="translate(30,100)">
+        <rect width="320" height="120" rx="8" fill="#fafafa" stroke="#e4e4e7"/>
+        <rect x="0" y="0" width="6" height="120" fill="#6c63ff"/>
+        <text x="22" y="30" class="t-svc-title">FastAPI Application</text>
+        <text x="22" y="52" class="t-svc-desc">POST /research · /history · /feedback · /health</text>
+        <text x="22" y="70" class="t-svc-desc">CORS middleware · pydantic models</text>
+        <text x="22" y="92" class="t-step" style="font-size:13px">main.py</text>
+      </g>
+
+      <!-- Sub-component: SSE Streaming -->
+      <g transform="translate(30,240)">
+        <rect width="320" height="120" rx="8" fill="#fafafa" stroke="#e4e4e7"/>
+        <rect x="0" y="0" width="6" height="120" fill="#6c63ff"/>
+        <text x="22" y="30" class="t-svc-title">SSE Progress Stream</text>
+        <text x="22" y="52" class="t-svc-desc">Yields status · classified · plan</text>
+        <text x="22" y="70" class="t-svc-desc">agent_start · agent_done · done</text>
+        <text x="22" y="92" class="t-step" style="font-size:13px">StreamingResponse</text>
+      </g>
+
+      <!-- Sub-component: Orchestrator -->
+      <g transform="translate(30,380)">
+        <rect width="320" height="140" rx="8" fill="#fafafa" stroke="#e4e4e7"/>
+        <rect x="0" y="0" width="6" height="140" fill="#6c63ff"/>
+        <text x="22" y="30" class="t-svc-title">Workflow Orchestrator</text>
+        <text x="22" y="52" class="t-svc-desc">Dispatches tasks · polls status</text>
+        <text x="22" y="70" class="t-svc-desc">Streams events to the browser</text>
+        <text x="22" y="92" class="t-step" style="font-size:13px">render_sdk · RenderAsync</text>
+        <text x="22" y="112" class="t-step" style="font-size:13px">pipeline/orchestrator.py</text>
+      </g>
+
+      <!-- Sub-component: Static Frontend -->
+      <g transform="translate(30,540)">
+        <rect width="320" height="100" rx="8" fill="#fafafa" stroke="#e4e4e7"/>
+        <rect x="0" y="0" width="6" height="100" fill="#6c63ff"/>
+        <text x="22" y="30" class="t-svc-title">Static Frontend</text>
+        <text x="22" y="52" class="t-svc-desc">EventSource client · activity feed</text>
+        <text x="22" y="74" class="t-step" style="font-size:13px">static/app.js · index.html</text>
+      </g>
+
+      <!-- Sub-component: Composition / Ports -->
+      <g transform="translate(30,660)">
+        <rect width="320" height="130" rx="8" fill="#fafafa" stroke="#e4e4e7"/>
+        <rect x="0" y="0" width="6" height="130" fill="#6c63ff"/>
+        <text x="22" y="30" class="t-svc-title">Ports &amp; Adapters</text>
+        <text x="22" y="52" class="t-svc-desc">ThreadRepository · FeedbackSubmitter</text>
+        <text x="22" y="70" class="t-svc-desc">Optional: Postgres history + LangSmith</text>
+        <text x="22" y="92" class="t-step" style="font-size:13px">composition.py</text>
+        <text x="22" y="112" class="t-step" style="font-size:13px">ports/ · adapters/</text>
+      </g>
+    </g>
+
+    <!-- Web Service ↔ Workflows edges (dispatch + poll) -->
+    <g>
+      <path d="M615 510 L720 510" stroke="#18181b" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+      <text x="667" y="498" text-anchor="middle" class="t-edge-strong">start_task</text>
+      <text x="667" y="514" text-anchor="middle" class="t-edge">${WORKFLOW_SLUG}/task</text>
+
+      <path d="M720 558 L615 558" stroke="#6c63ff" stroke-width="1.6" fill="none" marker-end="url(#arrPurple)" class="flow"/>
+      <text x="667" y="578" text-anchor="middle" class="t-edge" fill="#6c63ff">get_task_run · status &amp; results</text>
+    </g>
+
+    <!-- ============ RENDER WORKFLOWS ============ -->
+    <g transform="translate(720,100)">
+      <rect width="720" height="1000" rx="0" fill="#fff" stroke="#6c63ff" stroke-width="1.6"/>
+      <image href="images/favicons/render.svg" x="200" y="20" width="26" height="26"/>
+      <text x="234" y="42" class="t-panel">Render Workflows</text>
+      <text x="360" y="62" class="t-panel-sub">Each task runs in its own instance — isolated CPU/RAM, retries, dashboard replay</text>
+
+      <!-- Step 1: classify_query -->
+      <g transform="translate(30,100)">
+        <rect width="660" height="140" rx="0" fill="#fafafa" stroke="#e0dcff"/>
+        <circle cx="40" cy="40" r="18" fill="#6c63ff"/>
+        <text x="40" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">1</text>
+        <text x="80" y="40" class="t-step">classify_query</text>
+        <text x="80" y="64" class="t-desc">Decides whether the question needs web research or can be</text>
+        <text x="80" y="80" class="t-desc">answered directly. Returns { type, reply? } as JSON.</text>
+        <text x="80" y="108" class="t-note">starter · timeout 30s · 1 retry</text>
+        <use href="#logoClaude" x="560" y="14" width="56" height="56"/>
+        <text x="588" y="98" class="t-vendor">Claude</text>
+      </g>
+
+      <!-- Direct-answer short-circuit: small inline label only; lands at the fast-path strip below -->
+      <g>
+        <path d="M610 220 L678 220 L678 820" stroke="#71717a" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#arrMuted)"/>
+        <rect x="630" y="210" width="98" height="20" fill="#fff"/>
+        <text x="679" y="224" text-anchor="middle" class="t-note" fill="#71717a">if direct</text>
+      </g>
+
+      <!-- Step 2: plan_research -->
+      <g transform="translate(30,260)">
+        <rect width="660" height="140" rx="0" fill="#fafafa" stroke="#e0dcff"/>
+        <circle cx="40" cy="40" r="18" fill="#6c63ff"/>
+        <text x="40" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">2</text>
+        <text x="80" y="40" class="t-step">plan_research</text>
+        <text x="80" y="64" class="t-desc">Breaks the question into N focused subtopics, each with</text>
+        <text x="80" y="80" class="t-desc">success criteria. Returns { subtopics: [{ topic, criteria }] }.</text>
+        <text x="80" y="108" class="t-note">starter · timeout 45s · 2 retries · 1.5× backoff</text>
+        <use href="#logoClaude" x="560" y="14" width="56" height="56"/>
+        <text x="588" y="98" class="t-vendor">Claude</text>
+      </g>
+
+      <!-- Step 3: research_subtopic × N -->
+      <g transform="translate(30,420)">
+        <rect width="660" height="220" rx="0" fill="#fafafa" stroke="#e0dcff"/>
+        <circle cx="40" cy="40" r="18" fill="#6c63ff"/>
+        <text x="40" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">3</text>
+        <text x="80" y="40" class="t-step">research_subtopic  ×  N</text>
+        <text x="80" y="64" class="t-desc">Parallel LangGraph ReAct agents — one per subtopic. Claude</text>
+        <text x="80" y="80" class="t-desc">picks Exa tools at each step (search · find_similar) until</text>
+        <text x="80" y="96" class="t-desc">the criteria are met. Returns findings + key points + sources.</text>
+        <text x="80" y="124" class="t-note">standard · timeout 120s · 2 retries · 2× backoff</text>
+        <use href="#logoLangChain" x="560" y="14" width="56" height="56"/>
+        <text x="588" y="98" class="t-vendor">LangGraph</text>
+
+        <!-- Mini ghost cards behind step 3 to suggest fan-out -->
+        <rect x="80" y="148" width="180" height="48" rx="6" fill="#fff" stroke="#cdc4ff"/>
+        <text x="92" y="170" class="t-step" style="font-size:12px">subtopic[0]</text>
+        <text x="92" y="186" class="t-desc">independent retry/timeout</text>
+
+        <rect x="270" y="148" width="180" height="48" rx="6" fill="#fff" stroke="#cdc4ff"/>
+        <text x="282" y="170" class="t-step" style="font-size:12px">subtopic[1]</text>
+        <text x="282" y="186" class="t-desc">independent retry/timeout</text>
+
+        <rect x="460" y="148" width="180" height="48" rx="6" fill="#fff" stroke="#cdc4ff"/>
+        <text x="472" y="170" class="t-step" style="font-size:12px">subtopic[…N]</text>
+        <text x="472" y="186" class="t-desc">independent retry/timeout</text>
+      </g>
+
+      <!-- Step 4: synthesize -->
+      <g transform="translate(30,660)">
+        <rect width="660" height="140" rx="0" fill="#fafafa" stroke="#e0dcff"/>
+        <circle cx="40" cy="40" r="18" fill="#6c63ff"/>
+        <text x="40" y="46" text-anchor="middle" font-size="16" font-weight="700" fill="#fff">4</text>
+        <text x="80" y="40" class="t-step">synthesize</text>
+        <text x="80" y="64" class="t-desc">Merges every agent's findings into one structured report —</text>
+        <text x="80" y="80" class="t-desc">title, summary, sections (markdown), deduped sources.</text>
+        <text x="80" y="108" class="t-note">standard · timeout 90s · 1 retry</text>
+        <use href="#logoClaude" x="560" y="14" width="56" height="56"/>
+        <text x="588" y="98" class="t-vendor">Claude</text>
+      </g>
+
+      <!-- Direct-answer landing strip at the bottom of the panel -->
+      <g transform="translate(30,820)">
+        <rect width="660" height="80" rx="0" fill="#fff" stroke="#cdc4ff" stroke-dasharray="3 3"/>
+        <text x="20" y="32" class="t-note">direct-answer fast path</text>
+        <text x="20" y="56" class="t-desc">classify_query returns a `reply` field — skip plan/research/synthesize and stream it straight back to the browser.</text>
+      </g>
+
+      <!-- Vertical chain arrows between steps with data labels -->
+      <g stroke="#6c63ff" stroke-width="1.6" fill="none" marker-end="url(#arrPurple)" class="flow">
+        <path d="M360 240 L360 260"/>
+        <path d="M360 400 L360 420"/>
+        <path d="M360 640 L360 660"/>
+      </g>
+      <text x="372" y="254" class="t-edge" fill="#6c63ff">type=research → question</text>
+      <text x="372" y="414" class="t-edge" fill="#6c63ff">subtopics[] + criteria</text>
+      <text x="372" y="654" class="t-edge" fill="#6c63ff">findings[] from every agent</text>
+    </g>
+
+    <!-- Workflows ↔ AI Services edges -->
+    <g>
+      <path d="M1440 280 L1545 280" stroke="#71717a" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#arrMuted)"/>
+      <text x="1492" y="270" text-anchor="middle" class="t-edge">ask · classify</text>
+
+      <path d="M1440 440 L1545 440" stroke="#71717a" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#arrMuted)"/>
+      <text x="1492" y="430" text-anchor="middle" class="t-edge">ask · plan</text>
+
+      <path d="M1440 640 L1545 640" stroke="#71717a" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#arrMuted)"/>
+      <text x="1492" y="630" text-anchor="middle" class="t-edge">ReAct loop · tools</text>
+
+      <path d="M1440 820 L1545 820" stroke="#71717a" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#arrMuted)"/>
+      <text x="1492" y="810" text-anchor="middle" class="t-edge">ask · synthesize</text>
+    </g>
+
+    <!-- ============ AI SERVICES (right) ============ -->
+    <g transform="translate(1545,200)">
+      <rect width="320" height="760" rx="0" fill="#fff" stroke="#cc785c" stroke-width="1.6"/>
+      <text x="160" y="42" text-anchor="middle" class="t-panel" fill="#cc785c">AI Services</text>
+      <text x="160" y="62" text-anchor="middle" class="t-panel-sub">External APIs called by every workflow task</text>
+
+      <!-- Claude card -->
+      <g transform="translate(20,90)">
+        <rect width="280" height="120" rx="8" fill="#fafafa" stroke="#e4e4e7"/>
+        <use href="#logoClaude" x="14" y="32" width="56" height="56"/>
+        <text x="86" y="36" class="t-svc-title">Anthropic Claude</text>
+        <text x="86" y="56" class="t-svc-desc">Sonnet 4 — classifier, planner,</text>
+        <text x="86" y="72" class="t-svc-desc">ReAct brain, and synthesizer.</text>
+        <text x="86" y="92" class="t-step" style="font-size:12px">ChatAnthropic · tasks/llm.py</text>
+      </g>
+
+      <!-- LangGraph / LangChain card -->
+      <g transform="translate(20,230)">
+        <rect width="280" height="120" rx="8" fill="#fafafa" stroke="#e4e4e7"/>
+        <use href="#logoLangChain" x="14" y="32" width="56" height="56"/>
+        <text x="86" y="36" class="t-svc-title">LangChain + LangGraph</text>
+        <text x="86" y="56" class="t-svc-desc">create_react_agent runs the</text>
+        <text x="86" y="72" class="t-svc-desc">tool-calling loop inside step 3.</text>
+        <text x="86" y="92" class="t-step" style="font-size:12px">tasks/agent.py · tools.py</text>
+      </g>
+
+      <!-- Exa card -->
+      <g transform="translate(20,370)">
+        <rect width="280" height="120" rx="8" fill="#fafafa" stroke="#e4e4e7"/>
+        <use href="#logoExa" x="14" y="32" width="56" height="56"/>
+        <text x="86" y="36" class="t-svc-title">Exa</text>
+        <text x="86" y="56" class="t-svc-desc">Semantic web search exposed to</text>
+        <text x="86" y="72" class="t-svc-desc">Claude as LangGraph tools.</text>
+        <text x="86" y="92" class="t-step" style="font-size:12px">exa_search · find_similar</text>
+      </g>
+
+      <!-- LangSmith card (optional) -->
+      <g transform="translate(20,510)">
+        <rect width="280" height="130" rx="8" fill="#fafafa" stroke="#e4e4e7" stroke-dasharray="4 4"/>
+        <rect x="20" y="14" width="60" height="20" rx="4" fill="#fff" stroke="#71717a"/>
+        <text x="50" y="28" text-anchor="middle" class="t-note" fill="#71717a">optional</text>
+        <text x="20" y="58" class="t-svc-title">LangSmith</text>
+        <text x="20" y="80" class="t-svc-desc">Auto-traces Claude and LangGraph</text>
+        <text x="20" y="96" class="t-svc-desc">calls; powers in-UI feedback.</text>
+        <text x="20" y="118" class="t-step" style="font-size:12px">LANGCHAIN_API_KEY</text>
+      </g>
+
+      <!-- Footnote -->
+      <g transform="translate(20,660)">
+        <text x="0" y="14" class="t-desc">Workflow tasks own their own API keys — the web</text>
+        <text x="0" y="30" class="t-desc">service never holds ANTHROPIC_API_KEY or EXA_API_KEY.</text>
+        <text x="0" y="60" class="t-desc">Each task pays its own retry budget. If Exa 503s on</text>
+        <text x="0" y="76" class="t-desc">subtopic 2, subtopic 1 and 3 are unaffected.</text>
+      </g>
+    </g>
+
+    <!-- ============ POSTGRES (optional history) ============ -->
+    <g transform="translate(265,1050)">
+      <!-- Cylinder body -->
+      <path d="M 0 12 L 0 72 A 160 10 0 0 0 320 72 L 320 12"
+            fill="#fff" stroke="#6c63ff" stroke-width="1.6" stroke-dasharray="4 4"/>
+      <ellipse cx="160" cy="12" rx="160" ry="10"
+               fill="#fafafa" stroke="#6c63ff" stroke-width="1.6" stroke-dasharray="4 4"/>
+      <image href="images/favicons/render.svg" x="86" y="30" width="22" height="22"/>
+      <text x="116" y="46" class="t-panel" style="font-size:18px">Render Postgres</text>
+      <text x="160" y="62" text-anchor="middle" class="t-sub">Optional · DATABASE_URL</text>
+      <text x="160" y="76" text-anchor="middle" class="t-sub">stores threads + messages for follow-ups</text>
+    </g>
+
+    <!-- Web Service → Postgres edge -->
+    <g>
+      <path d="M425 980 L425 1050" stroke="#6c63ff" stroke-width="1.4" fill="none" stroke-dasharray="4 4" marker-end="url(#arrPurple)"/>
+      <text x="436" y="1014" class="t-edge" fill="#6c63ff">save_entry · list / get / delete</text>
+    </g>
+
+    <!-- ============ LEGEND ============ -->
+    <g transform="translate(40,1100)">
+      <rect width="200" height="120" rx="6" fill="#fff" stroke="#e4e4e7"/>
+      <text x="14" y="26" class="t-legend">Legend</text>
+
+      <line x1="14" y1="50" x2="60" y2="50" stroke="#18181b" stroke-width="1.6" marker-end="url(#arr)"/>
+      <text x="70" y="54" class="t-edge">request / control</text>
+
+      <line x1="14" y1="74" x2="60" y2="74" stroke="#6c63ff" stroke-width="1.6" marker-end="url(#arrPurple)" stroke-dasharray="6 6" class="flow"/>
+      <text x="70" y="78" class="t-edge">SSE / Render events</text>
+
+      <line x1="14" y1="98" x2="60" y2="98" stroke="#71717a" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arrMuted)"/>
+      <text x="70" y="102" class="t-edge">external / optional</text>
+    </g>
+  </svg>
+</div>
+</body>
+</html>
